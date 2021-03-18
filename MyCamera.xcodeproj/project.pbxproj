@@ -59,7 +59,6 @@
 		4785054F260351B3002DD549 /* ModularGridStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47850540260351B3002DD549 /* ModularGridStyle.swift */; };
 		47850550260351B3002DD549 /* GridItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47850541260351B3002DD549 /* GridItem.swift */; };
 		47850551260351B3002DD549 /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47850542260351B3002DD549 /* Grid.swift */; };
-		4785055526037694002DD549 /* SectionGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4785055426037694002DD549 /* SectionGrid.swift */; };
 		478505592603C35C002DD549 /* ImageGalleryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478505582603C35C002DD549 /* ImageGalleryManager.swift */; };
 		47F88B9C25F8C08900974BD9 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F88B9B25F8C08900974BD9 /* CameraManager.swift */; };
 		47F88BA325F91D9F00974BD9 /* MyCamera.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 47F88BA125F91D9F00974BD9 /* MyCamera.xcdatamodeld */; };
@@ -122,7 +121,6 @@
 		47850540260351B3002DD549 /* ModularGridStyle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModularGridStyle.swift; sourceTree = "<group>"; };
 		47850541260351B3002DD549 /* GridItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GridItem.swift; sourceTree = "<group>"; };
 		47850542260351B3002DD549 /* Grid.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
-		4785055426037694002DD549 /* SectionGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionGrid.swift; sourceTree = "<group>"; };
 		478505582603C35C002DD549 /* ImageGalleryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGalleryManager.swift; sourceTree = "<group>"; };
 		47F88B9B25F8C08900974BD9 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		47F88BA225F91D9F00974BD9 /* MyCamera.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MyCamera.xcdatamodel; sourceTree = "<group>"; };
@@ -226,7 +224,6 @@
 				472A805C25F76C5B00E24110 /* ImageGalleryView.swift */,
 				478505582603C35C002DD549 /* ImageGalleryManager.swift */,
 				475A212A25F9FF5B0046904D /* ImageGallaryCell.swift */,
-				4785055426037694002DD549 /* SectionGrid.swift */,
 			);
 			name = ImageGallery;
 			sourceTree = "<group>";
@@ -474,7 +471,6 @@
 				47F88B9C25F8C08900974BD9 /* CameraManager.swift in Sources */,
 				47850544260351B3002DD549 /* StaggeredGridStyle.swift in Sources */,
 				472A802625F75D6F00E24110 /* Utils.swift in Sources */,
-				4785055526037694002DD549 /* SectionGrid.swift in Sources */,
 				472E949526010223007664F9 /* CameraViewControllerRepresentable.swift in Sources */,
 				472E94C22601CD28007664F9 /* OnboardingView.swift in Sources */,
 				4785054F260351B3002DD549 /* ModularGridStyle.swift in Sources */,
