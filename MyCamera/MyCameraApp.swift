@@ -9,9 +9,19 @@ import SwiftUI
 
 @main
 struct MyCameraApp: App {
+    
+    let persistenceController = PersistenceController.shared
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .statusBar(hidden: true)
         }
+    }
+    
+    init() {
+        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor.systemGray
+        UIPageControl.appearance().pageIndicatorTintColor = UIColor.black.withAlphaComponent(0.2)
     }
 }

@@ -8,14 +8,23 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    @AppStorage(UserdefaultManager.shared._hasShownOnboarding) private var hasShownOnboarding: Bool = UserdefaultManager.shared.hasShownOnboarding
+    @AppStorage(UserdefaultManager.shared._doneSetup) private var doneSetup: Bool = UserdefaultManager.shared.doneSetup
+    
     var body: some View {
-        Text("Hello, world!")
-            .padding()
-    }
-}
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+        if hasShownOnboarding {
+            if doneSetup {
+                CameraView()
+            } else {
+                NavigationView {
+                    SetupView().navigationBarHidden(true)
+                }
+            }
+        }else {
+            NavigationView {
+                OnboardingView().navigationBarHidden(true)
+            }
+        }
     }
 }
