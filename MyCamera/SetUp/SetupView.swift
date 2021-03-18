@@ -76,6 +76,9 @@ extension SetupView {
             labelText = "Your new album is successfully created!"
             isSuccess = true
             UserdefaultManager.shared.currentFolderName = pw
+            Utils.createDefaultPhotos()
+            
+            
         }
     }
     private func reset() {

@@ -17,11 +17,9 @@ struct MyCameraApp: App {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .statusBar(hidden: true)
+            
         }
     }
     
-    init() {
-        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor.systemGray
-        UIPageControl.appearance().pageIndicatorTintColor = UIColor.black.withAlphaComponent(0.2)
-    }
+   
 }

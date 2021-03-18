@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    
+    init() {
+        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor.systemGray
+        UIPageControl.appearance().pageIndicatorTintColor = UIColor.black.withAlphaComponent(0.2)
+    }
     var body: some View {
         VStack {
-            
             TabView {
                 ForEach(OnboardingData) { page in
                     GeometryReader { g in
@@ -48,11 +50,11 @@ struct OnboardingView: View {
         
         .navigationBarItems(trailing:
                                 NavigationLink(
-                                    destination: Location().navigationBarBackButtonHidden(true).navigationBarHidden(true),
+                                    destination: Location()
+                                        .navigationBarBackButtonHidden(true).navigationBarHidden(true),
                                     label: {
                                         Image(systemName: "arrow.right")
                                             .font(Font.system(.title3))
-                                            .foregroundColor(Color.accentColor)
                                     })
         )
         .navigationBarBackButtonHidden(true)

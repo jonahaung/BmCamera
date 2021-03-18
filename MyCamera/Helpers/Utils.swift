@@ -142,10 +142,21 @@ class Utils {
         
         return URL(string: folderPath)
     }
+    
+    
+    static func createDefaultPhotos() {
+        let imageNames = ["bagan", "beach", "cat", "photoAlbum"]
+        imageNames.forEach{
+            if let data = UIImage(named: $0)?.jpegData(compressionQuality: 1){
+                _ = Photo.create(data: data, isVideo: false)
+            }
+        }
+    }
 }
 
  let relativeDateFormat: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
+    formatter.doesRelativeDateFormatting = true
         return formatter
     }()

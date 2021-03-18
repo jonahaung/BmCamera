@@ -76,7 +76,7 @@ struct ImageViewerView: View {
             Spacer()
             Button {
                 photo.isFavourite.toggle()
-                PersistenceController.shared.save()
+                PersistenceController.shared.container.viewContext.refresh(photo, mergeChanges: true)
                 isFavourite = photo.isFavourite
             } label: {
                 Image(systemName: isFavourite ? "heart.fill" : "heart")

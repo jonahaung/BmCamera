@@ -15,15 +15,13 @@ struct ContentView: View {
     var body: some View {
         if hasShownOnboarding {
             if doneSetup {
-                CameraView()
+                CameraView().accentColor(.white)
             } else {
-                NavigationView {
-                    SetupView().navigationBarHidden(true)
-                }
+                SetupView()
             }
         }else {
             NavigationView {
-                OnboardingView().navigationBarHidden(true)
+                OnboardingView()
             }
         }
     }

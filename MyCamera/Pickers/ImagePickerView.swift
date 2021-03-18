@@ -37,11 +37,12 @@ struct ImagePickerView: UIViewControllerRepresentable {
             if let image = (info[.originalImage]) as? UIImage, let data = image.jpegData(compressionQuality: 1) {
                 
                 picker.dismiss(animated: true) {
-                    Photo.create(data: data, isVideo: false)
+                    _ = Photo.create(data: data, isVideo: false)
                 }
             } else if let videoURL = info[UIImagePickerController.InfoKey.mediaURL] as? URL, let data = try? Data(contentsOf: videoURL) {
+                _ = Photo.create(data: data, isVideo: true)
                 picker.dismiss(animated: true) {
-                    Photo.create(data: data, isVideo: true)
+                   
                 }
                 
             }

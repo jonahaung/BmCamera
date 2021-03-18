@@ -41,7 +41,7 @@ struct DocPickerView: UIViewControllerRepresentable {
                     }
                 }
                 if let image = UIImage(contentsOfFile: url.path), let data = image.jpegData(compressionQuality: 1) {
-                    Photo.create(data: data, isVideo: false)
+                    _ = Photo.create(data: data, isVideo: false)
                 }
             }
         }

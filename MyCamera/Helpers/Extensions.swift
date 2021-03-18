@@ -7,10 +7,16 @@
 
 import UIKit
 import AVKit
+import SwiftUI
 
-extension UIImage: Identifiable {
-    public var id: UIImage { self }
+extension EditMode {
+    
+    mutating func toggle() {
+        self = self == .active ? .inactive : .active
+    }
 }
+
+
 extension UIApplication {
 
     class func getTopViewController(base: UIViewController? = UIApplication.shared.windows.first?.rootViewController) -> UIViewController? {
@@ -39,16 +45,12 @@ extension UIImage {
     }
 }
 
-extension URL: Identifiable {
-    public var id: URL {
-        return self
-    }
-}
+
 extension UIImage {
 
   func getThumbnail() -> UIImage? {
 
-    return scaledWithMaxWidthOrHeightValue(value: 50)
+    return scaledWithMaxWidthOrHeightValue(value: UIScreen.main.bounds.width)
 
   }
 
@@ -94,3 +96,52 @@ extension UIImage {
     }
 }
 
+extension Data {
+    
+//    func decrypt() -> Data? {
+//        guard let folerName = UserdefaultManager.shared.currentFolderName else {
+//            return nil
+//        }
+//        do {
+//            let originalData = try RNCryptor.decrypt(data: self, withPassword: folerName)
+//            return originalData
+//            // ...
+//        } catch {
+//            print(error)
+//            return nil
+//        }
+//    }
+//
+//    func encrypt() -> Data? {
+//        guard let folerName = UserdefaultManager.shared.currentFolderName else {
+//            return nil
+//        }
+//        return RNCryptor.encrypt(data: self, withPassword: folerName)
+//    }
+    
+    var image: UIImage? {
+        return UIImage(data: self)
+    }
+}
+
+
+extension URL {
+    var data: Data? {
+        return try? Data(contentsOf: self)
+    }
+    
+    var videoThumbnil: UIImage? {
+        let asset = AVAsset(url: self) //2
+        let avAssetImageGenerator = AVAssetImageGenerator(asset: asset) //3
+        avAssetImageGenerator.appliesPreferredTrackTransform = true //4
+        let thumnailTime = CMTimeMake(value: 1, timescale: 1) //5
+        do {
+            let cgThumbImage = try avAssetImageGenerator.copyCGImage(at: thumnailTime, actualTime: nil) //6
+            let thumbNailImage = UIImage(cgImage: cgThumbImage) //7
+            return thumbNailImage
+        } catch {
+            print(error.localizedDescription) //10
+            return nil
+        }
+    }
+}

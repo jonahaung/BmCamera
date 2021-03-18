@@ -38,7 +38,6 @@ class CameraManager: NSObject, ObservableObject {
             toggleCaptureMode(captureMode: captureMode)
         }
     }
-    @Published var flashMode = AVCaptureDevice.FlashMode.auto
     
     @Published var photoQualityPrioritizationModeIndex = AVCapturePhotoOutput.QualityPrioritization.balanced
     
@@ -112,20 +111,6 @@ extension CameraManager {
 
 extension CameraManager {
     
-    func updateFlashMode() {
-        
-        switch flashMode {
-        case .off:
-            flashMode = .on
-        case .on:
-            flashMode = .auto
-        case .auto:
-            flashMode = .off
-        @unknown default:
-            break
-        }
-    }
-    
     private func zoomValueDidChange(_ value: Float) {
         do {
             try defaultVideoDevice?.lockForConfiguration()
@@ -171,7 +156,7 @@ extension CameraManager {
             }
             
             if self.videoDeviceInput.device.isFlashAvailable {
-                photoSettings.flashMode = self.flashMode
+                photoSettings.flashMode = UserdefaultManager.shared.flashMode
             }
             
             photoSettings.isHighResolutionPhotoEnabled = true

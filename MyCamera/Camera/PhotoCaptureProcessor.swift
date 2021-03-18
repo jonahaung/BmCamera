@@ -54,6 +54,9 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
         willCapturePhotoAnimation()
         
+        if UserdefaultManager.shared.offShutterSound {
+            AudioServicesDisposeSystemSoundID(1108)
+        }
         guard let maxPhotoProcessingTime = maxPhotoProcessingTime else {
             return
         }

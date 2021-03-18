@@ -5,7 +5,7 @@
 //  Created by Aung Ko Min on 9/3/21.
 //
 
-import Foundation
+import AVFoundation
 
 class UserdefaultManager {
     
@@ -15,6 +15,8 @@ class UserdefaultManager {
     private let _passwords = "passwords"
     let _hasShownOnboarding = "hasShownOnboarding"
     let _doneSetup = "doneSetup"
+    let _offShutterSound = "playShutterSound"
+    let _flashMode = "flashMode"
     
     var currentFolderName: String? {
         get {
@@ -56,6 +58,23 @@ class UserdefaultManager {
         }
         set {
             manager.setValue(newValue, forKey: _doneSetup)
+        }
+    }
+    var offShutterSound: Bool {
+        get {
+            return manager.bool(forKey: _offShutterSound)
+        }
+        set {
+            manager.setValue(newValue, forKey: _offShutterSound)
+        }
+    }
+    
+    var flashMode: AVCaptureDevice.FlashMode {
+        get {
+            return AVCaptureDevice.FlashMode(rawValue: manager.integer(forKey: _flashMode)) ?? .off
+        }
+        set {
+            manager.setValue(newValue.rawValue, forKey: _flashMode)
         }
     }
 }

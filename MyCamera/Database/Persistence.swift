@@ -67,7 +67,7 @@ struct PersistenceController {
         }
     }
 }
-
+var imageCache = NSCache<NSString, UIImage>()
 extension Photo {
     
     static func create(data: Data, isVideo: Bool) -> Photo? {
@@ -106,11 +106,31 @@ extension Photo {
         guard let url = mediaUrl else { return nil }
         return UIImage(contentsOfFile: url.path)
     }
+    
+    func thumbnil() -> UIImage? {
+        guard let id = self.id?.uuidString else { return nil}
+        if let x = imageCache.object(forKey: id as NSString) {
+            return x
+        }
+        if isVideo {
+            if let x = mediaUrl?.videoThumbnil {
+                imageCache.setObject(x, forKey: id as NSString)
+                return x
+            }
+        }else {
+            if let x = self.image()?.getThumbnail() {
+                imageCache.setObject(x, forKey: id as NSString)
+                return x
+            }
+        }
+        return nil
+    }
 
     static var allFetchRequest: NSFetchRequest<Photo> {
         let folerName = UserdefaultManager.shared.currentFolderName ?? ""
         let request: NSFetchRequest<Photo> = Photo.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        request.fetchBatchSize = 20
+        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false), NSSortDescriptor(key: "date", ascending: false)]
         request.predicate = NSPredicate(format: "userId == %@", folerName)
         return request
       }

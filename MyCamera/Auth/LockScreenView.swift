@@ -91,6 +91,8 @@ extension LockScreenView {
         } else {
             existingPasswords.append(pw)
             UserdefaultManager.shared.passWords = existingPasswords
+            UserdefaultManager.shared.currentFolderName = pw
+            Utils.createDefaultPhotos()
             labelText = "Success! Please login using your password"
             isNewUser = false
             reset()

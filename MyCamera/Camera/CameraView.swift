@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct CameraView: View {
     
@@ -13,7 +14,7 @@ struct CameraView: View {
     @StateObject private var manager = CameraManager()
     @State private var isPotrait = Utils.isPotrait()
     @State private var showMenuSheet = false
-    
+    @AppStorage(UserdefaultManager.shared._flashMode) private var flashMode: Int = UserdefaultManager.shared.flashMode.rawValue
     enum PresentingViewType: Identifiable {
         var id: PresentingViewType { return self }
         case photoLibrary, lockScreen, settings, imageViewer
@@ -22,10 +23,11 @@ struct CameraView: View {
     
     var body: some View {
         ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
             CameraViewControllerRepresentable(observer: manager)
                 .edgesIgnoringSafeArea(.all)
             controlView
-                .accentColor(.white)
+                
                 .zIndex(2)
         }
         
@@ -106,10 +108,6 @@ extension CameraView {
         }
         .padding()
     }
-    
-
-    
-    
 }
 
 // Bars
@@ -242,12 +240,24 @@ extension CameraView {
             Image(systemName: "magnifyingglass").padding()
         }
     }
+    
     // Flash
     private var flashModeButton: some View {
         return Button {
-            manager.updateFlashMode()
+            var mode = AVCaptureDevice.FlashMode(rawValue: self.flashMode) ?? .off
+            switch mode {
+            case .off:
+                mode = .on
+            case .on:
+                mode = .auto
+            case .auto:
+                mode = .off
+            @unknown default:
+                break
+            }
+            UserdefaultManager.shared.flashMode = mode
         } label: {
-            Image(systemName: manager.flashMode.imageName).padding()
+            Image(systemName: AVCaptureDevice.FlashMode(rawValue: flashMode)?.imageName ?? "").padding()
         }
     }
     // CameraMode
@@ -294,14 +304,12 @@ extension CameraView {
         return Button {
             presentingViewType = .imageViewer
         } label: {
-            if !photo.isVideo, let image = photo.image() {
+            if let image = photo.thumbnil() {
                 Image(uiImage: image)
                     .resizable()
-            } else if let url = photo.mediaUrl, let image = url.videoThumbnil {
-                Image(uiImage: image)
-                    .resizable()
+                    .frame(width: 80, height: 80).cornerRadius(40)
             }
-            
-        }.frame(width: 80, height: 80).cornerRadius(40)
+        }
+
     }
 }
