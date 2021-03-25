@@ -16,8 +16,10 @@ struct ImageViewerView: View {
     @State private var image = Image(systemName: "circle.fill")
     @State private var isFavourite = false
     
+    
     var body: some View {
         VStack {
+            
             Spacer()
             if photo.isVideo, let url = photo.mediaUrl {
                 VideoPlayer(player: AVPlayer(url:  url))
@@ -37,10 +39,11 @@ struct ImageViewerView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing: Text(Int(photo.fileSize).byteSize).font(.footnote))
         .navigationTitle("\(photo.date ?? Date(), formatter: relativeDateFormat)")
         .overlay(ImageViewer(image: $image, viewerShown: $showImageViewer))
         .onAppear{
-            if let image = photo.image() {
+            if let image = photo.originalImage {
                 self.image = Image(uiImage: image)
             }
             
@@ -63,24 +66,25 @@ struct ImageViewerView: View {
             Spacer()
             Button {
                 
-                let action: Action = {
+                let action = {
                     Photo.delete(photo: photo)
                     presentationMode.wrappedValue.dismiss()
                 }
-                let actionPair = ActionPair("Confirm Delete",action)
+                let actionPair = ActionPair("Confirm Delete", action, .destructive)
                 AlertPresenter.presentActionSheet(actions: [actionPair])
                 
             } label: {
-                Image(systemName: "trash.fill")
+                Image(systemName: "trash")
             }
             Spacer()
             Button {
+                SoundManager.vibrate(vibration: .selection)
                 photo.isFavourite.toggle()
                 PersistenceController.shared.container.viewContext.refresh(photo, mergeChanges: true)
                 isFavourite = photo.isFavourite
             } label: {
                 Image(systemName: isFavourite ? "heart.fill" : "heart")
-                    .foregroundColor(.red)
+            
             }
             Spacer()
             Button {

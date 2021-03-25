@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct ActivityIndicatorView: UIViewRepresentable {
-    var color: UIColor = .gray
+
     func makeUIView(context: Context) -> UIActivityIndicatorView {
         let view = UIActivityIndicatorView()
-        view.color = color
+//        view.color = color
         view.hidesWhenStopped = true
         return view
     }

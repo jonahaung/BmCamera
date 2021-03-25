@@ -7,13 +7,12 @@
 
 import UIKit
 
-class CurrentLoginSession: ObservableObject {
-    
-    @Published var isLoggingIn = false
-    @Published var folderName: String?
-    
-    func reset() {
-        folderName = nil
-        isLoggingIn = false
-    }
-}
+//class CurrentLoginSession: ObservableObject {
+//    
+////    @Published var folderName: String?
+//    
+////    func reset() {
+////        folderName = nil
+////        isLoggingIn = false
+////    }
+//}

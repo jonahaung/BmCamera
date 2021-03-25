@@ -10,15 +10,20 @@ import MobileCoreServices
 import PDFKit
 
 struct DocPickerView: UIViewControllerRepresentable {
-
+    
     typealias UIViewControllerType = UIDocumentPickerViewController
     
+    let completion: (_ selectedImage: [Photo]) -> Void
+    
+    @Environment(\.presentationMode) var presentationMode
+    
     func makeCoordinator() -> Coordinator {
-        return Coordinator()
+        return Coordinator(self)
     }
     
     func makeUIViewController(context: UIViewControllerRepresentableContext<DocPickerView>) -> UIDocumentPickerViewController {
-        let x = UIDocumentPickerViewController(documentTypes: [String(kUTTypeJPEG), String(kUTTypePNG)], in: .open)
+        
+        let x = UIDocumentPickerViewController(forOpeningContentTypes: [.video, .jpeg, .png, .avi, .image])
         x.delegate = context.coordinator
         
         return x
@@ -28,7 +33,14 @@ struct DocPickerView: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, UIDocumentPickerDelegate, UINavigationControllerDelegate {
-    
+        
+        
+        let parent: DocPickerView
+        
+        init(_ parent: DocPickerView) {
+            self.parent = parent
+        }
+        
         
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
             controller.dismiss(animated: true)
@@ -41,7 +53,10 @@ struct DocPickerView: UIViewControllerRepresentable {
                     }
                 }
                 if let image = UIImage(contentsOfFile: url.path), let data = image.jpegData(compressionQuality: 1) {
-                    _ = Photo.create(data: data, isVideo: false)
+                    if let photo = Photo.create(data: data, isVideo: false) {
+                        parent.completion([photo])
+                    }
+                    
                 }
             }
         }

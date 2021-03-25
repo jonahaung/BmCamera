@@ -21,13 +21,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Let us access your camera</string>
+	<string>Please allow us to access your camera</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Lets us use your files</string>
+	<string>Please allow us to access your documents folder</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Let us use your microphone</string>
+	<string>Please allow us to access your microphone</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Let us use your photo library</string>
+	<string>Please allow us to access your photo library</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -48,7 +48,7 @@
 	<key>UIStatusBarHidden</key>
 	<true/>
 	<key>UIStatusBarStyle</key>
-	<string>UIStatusBarStyleDarkContent</string>
+	<string>UIStatusBarStyleLightContent</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

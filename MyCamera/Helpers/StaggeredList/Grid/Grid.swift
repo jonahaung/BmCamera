@@ -5,7 +5,7 @@ import SwiftUI
 public struct Grid<Content>: View where Content: View {
     @Environment(\.gridStyle) private var style
     @State var preferences: GridPreferences = GridPreferences(size: .zero, items: [])
-    let items: [GridItem]
+    let items: [MyGridItem]
     
     public var body: some View {
         GeometryReader { geometry in

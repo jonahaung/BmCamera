@@ -11,21 +11,15 @@ class UserdefaultManager {
     
     static let shared = UserdefaultManager()
     private let manager = UserDefaults.standard
+    
     let _currentFolderName = "currentFolderName"
-    private let _passwords = "passwords"
+    let _passwords = "passwords"
     let _hasShownOnboarding = "hasShownOnboarding"
     let _doneSetup = "doneSetup"
     let _offShutterSound = "playShutterSound"
     let _flashMode = "flashMode"
-    
-    var currentFolderName: String? {
-        get {
-            return manager.string(forKey: _currentFolderName)
-        }
-        set {
-            manager.setValue(newValue, forKey: _currentFolderName)
-        }
-    }
+    let _currentGrid = "_currentGrid"
+
     var passWords: [String] {
         get {
             guard let data = UserDefaults.standard.object(forKey: _passwords) as? Data, let passwords = (try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSArray.self, from: data)) as? [String]  else {
@@ -44,37 +38,34 @@ class UserdefaultManager {
         }
     }
     
+    var currentFolderName: String? {
+        get { return manager.string(forKey: _currentFolderName) }
+        set { manager.setValue(newValue, forKey: _currentFolderName) }
+    }
+    
     var hasShownOnboarding: Bool {
-        get {
-            return manager.bool(forKey: _hasShownOnboarding)
-        }
-        set {
-            manager.setValue(newValue, forKey: _hasShownOnboarding)
-        }
+        get { return manager.bool(forKey: _hasShownOnboarding) }
+        set { manager.setValue(newValue, forKey: _hasShownOnboarding) }
     }
+    
     var doneSetup: Bool {
-        get {
-            return manager.bool(forKey: _doneSetup)
-        }
-        set {
-            manager.setValue(newValue, forKey: _doneSetup)
-        }
+        get { return manager.bool(forKey: _doneSetup) }
+        set { manager.setValue(newValue, forKey: _doneSetup) }
     }
+    
     var offShutterSound: Bool {
-        get {
-            return manager.bool(forKey: _offShutterSound)
-        }
-        set {
-            manager.setValue(newValue, forKey: _offShutterSound)
-        }
+        get { return manager.bool(forKey: _offShutterSound) }
+        set { manager.setValue(newValue, forKey: _offShutterSound) }
     }
     
     var flashMode: AVCaptureDevice.FlashMode {
-        get {
-            return AVCaptureDevice.FlashMode(rawValue: manager.integer(forKey: _flashMode)) ?? .off
-        }
-        set {
-            manager.setValue(newValue.rawValue, forKey: _flashMode)
-        }
+        get { return AVCaptureDevice.FlashMode(rawValue: manager.integer(forKey: _flashMode)) ?? .off }
+        set { manager.setValue(newValue.rawValue, forKey: _flashMode) }
     }
+    
+    var currentGrid: Int {
+        get { return manager.integer(forKey: _currentGrid) }
+        set { manager.setValue(newValue, forKey: _currentGrid) }
+    }
+    
 }

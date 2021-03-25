@@ -12,30 +12,21 @@ import Photos
 class CameraManager: NSObject, ObservableObject {
 
     @Published var captureButtonEnabled = true
-   
     @Published var captureModeControlEnabled = true
     @Published var isRecordingVideo = false
     
-    @Published var showZoomControl = false {
-        didSet {
-            if showZoomControl {
-                startTimer()
-            }
-        }
-    }
-    @Published var currentCapturedPhoto: Photo?
+    @Published var showControls = false
+    @Published var photos: [Photo] = []
     
     @Published var zoom: CGFloat = 0 {
         willSet {
             zoomValueDidChange(Float(zoom/20))
-//            labelText = "\(Int(zoom * 5))%"
         }
     }
     
     @Published var captureMode = CaptureMode.photo {
-        didSet {
-            guard oldValue != captureMode else { return }
-            toggleCaptureMode(captureMode: captureMode)
+        willSet {
+            toggleCaptureMode(captureMode: newValue)
         }
     }
     
@@ -62,9 +53,8 @@ class CameraManager: NSObject, ObservableObject {
     private var backgroundRecordingID: UIBackgroundTaskIdentifier?
     private let videoDeviceDiscoverySession = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera, .builtInTrueDepthCamera], mediaType: .video, position: .unspecified)
     private var defaultVideoDevice: AVCaptureDevice?
-//    private var photoQualityPrioritizationMode: AVCapturePhotoOutput.QualityPrioritization = .balanced
     
-    private var isSessionRunning = false
+    var isSessionRunning = false
     private weak var timer: Timer?
     private var timeLeft = 4
     
@@ -78,34 +68,8 @@ class CameraManager: NSObject, ObservableObject {
         super.init()
         setup()
     }
-}
-
-
-// Timer
-
-extension CameraManager {
     
-    private func updateTimer() {
-        timeLeft = 4
-    }
-    private func startTimer() {
-        updateTimer()
-        if timer == nil {
-            timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(onTimerFires), userInfo: nil, repeats: true)
-        }
-    }
-    
-    @objc private func onTimerFires(){
-        timeLeft -= 1
-        if timeLeft <= 0 {
-            timer?.invalidate()
-            timer = nil
-            showZoomControl = false
-            
-        }
-    }
 }
-
 
 // Zoom
 
@@ -167,9 +131,12 @@ extension CameraManager {
             
             photoSettings.photoQualityPrioritization = self.photoQualityPrioritizationModeIndex
             
-            let photoCaptureProcessor = PhotoCaptureProcessor(with: photoSettings, willCapturePhotoAnimation: {
+            let photoCaptureProcessor = PhotoCaptureProcessor(with: photoSettings,
+                                                              willCapturePhotoAnimation: {
                 // Flash the screen to signal that AVCam took a photo.
                 DispatchQueue.main.async {
+                    self.captureButtonEnabled = false
+                    self.captureModeControlEnabled = false
                     self.previewView.videoPreviewLayer.opacity = 0
                     UIView.animate(withDuration: 0.25) {
                         self.previewView.videoPreviewLayer.opacity = 1
@@ -183,7 +150,9 @@ extension CameraManager {
                 }
             }, onCreatedPhoto: { photo in
                 Async.main {
-                    self.currentCapturedPhoto = photo
+                    self.photos.append(photo)
+                    self.captureButtonEnabled = true
+                    self.captureModeControlEnabled = true
                 }
                 
             }, photoProcessingHandler: { animate in
@@ -207,14 +176,7 @@ extension CameraManager {
             return
         }
         
-        /*
-         Disable the Camera button until recording finishes, and disable
-         the Record button until recording starts or finishes.
-         
-         See the AVCaptureFileOutputRecordingDelegate methods.
-         */
         captureButtonEnabled = false
-        
         captureModeControlEnabled = false
         
         let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection?.videoOrientation
@@ -235,12 +197,20 @@ extension CameraManager {
                     movieFileOutput.setOutputSettings([AVVideoCodecKey: AVVideoCodecType.hevc], for: movieFileOutputConnection!)
                 }
                 
-                // Start recording video to a temporary file.
-                let outputFileName = UUID().uuidString
-                let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
-                movieFileOutput.startRecording(to: URL(fileURLWithPath: outputFilePath), recordingDelegate: self)
+                let id = UUID()
+                
+                guard let photo = Photo.create(id: id, isVideo: true), let outputURL = photo.mediaUrl else {
+                    return
+                }
+                
+                movieFileOutput.startRecording(to: outputURL, recordingDelegate: self)
+                Async.main {
+                    self.photos.append(photo)
+                    
+                }
             } else {
                 movieFileOutput.stopRecording()
+        
             }
         }
     }
@@ -267,10 +237,10 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
         // Enable the Record button to let the user stop recording.
         DispatchQueue.main.async {
-           
+            self.startMovieTimer()
             self.captureButtonEnabled = true
             self.isRecordingVideo = true
-            self.startMovieTimer()
+            
         }
     }
     
@@ -280,15 +250,6 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         // Note: Because we use a unique file path for each recording, a new recording won't overwrite a recording mid-save.
         func cleanup() {
-            let path = outputFileURL.path
-            if FileManager.default.fileExists(atPath: path) {
-                do {
-                    try FileManager.default.removeItem(atPath: path)
-                } catch {
-                    print("Could not remove file at url: \(outputFileURL)")
-                }
-            }
-            
             if let currentBackgroundRecordingID = backgroundRecordingID {
                 backgroundRecordingID = UIBackgroundTaskIdentifier.invalid
                 
@@ -306,13 +267,13 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
         }
         
         if success {
-            do {
-                let data = try Data(contentsOf: outputFileURL)
-                if let photo = Photo.create(data: data, isVideo: true) {
-                    self.currentCapturedPhoto = photo
+            if let photo = photos.last {
+                photo.fileSize = output.recordedFileSize
+                photo.duration = Int64(output.recordedDuration.seconds)
+                if let url = photo.mediaUrl, let thumbnil = url.videoThumbnil {
+                    photo.thumbnilData = thumbnil.jpegData(compressionQuality: 1)
                 }
-            } catch {
-                print(error.localizedDescription)
+                PersistenceController.shared.save()
             }
         }
         
@@ -322,10 +283,10 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
         DispatchQueue.main.async {
             // Only enable the ability to change camera if the device has more than one camera.
             self.captureButtonEnabled = self.videoDeviceDiscoverySession.uniqueDevicePositionsCount > 1
-            
             self.captureModeControlEnabled = true
             self.isRecordingVideo = false
             self.stopMovieTimer()
+            
         }
     }
 }
@@ -334,27 +295,27 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
 extension CameraManager {
     
     func toggleCaptureMode(captureMode: CaptureMode) {
-        SoundManager.vibrate(vibration: .selection)
+        
         captureModeControlEnabled = false
         
         if captureMode == CaptureMode.photo {
-            
             sessionQueue.async {
                 // Remove the AVCaptureMovieFileOutput from the session because it doesn't support capture of Live Photos.
                 self.session.beginConfiguration()
                 self.session.removeOutput(self.movieFileOutput!)
                 self.session.sessionPreset = .photo
                 
-                DispatchQueue.main.async {
-                    self.captureModeControlEnabled = true
-                }
+    
                 self.movieFileOutput = nil
                 
-                DispatchQueue.main.async {
-                    self.photoQualityPrioritizationModeIndex = .balanced
-
-                }
+                
                 self.session.commitConfiguration()
+                
+                DispatchQueue.main.async {
+                    self.captureModeControlEnabled = true
+                    self.photoQualityPrioritizationModeIndex = .balanced
+                    
+                }
             }
         } else if captureMode == CaptureMode.movie {
             
@@ -373,29 +334,23 @@ extension CameraManager {
                     }
                     self.session.commitConfiguration()
                     
-                    DispatchQueue.main.async {
-                        self.captureModeControlEnabled = true
-                        //                        captureModeControl.isEnabled = true
-                    }
+                    
                     
                     self.movieFileOutput = movieFileOutput
                     
                     DispatchQueue.main.async {
-                        
-                        
-                        /*
-                         For photo captures during movie recording, Speed quality photo processing is prioritized
-                         to avoid frame drops during recording.
-                         */
+                        SoundManager.vibrate(vibration: .soft)
+                        self.captureModeControlEnabled = true
                         self.photoQualityPrioritizationModeIndex = .speed
                     }
+                    
                 }
             }
         }
     }
    
     func changeCamera() {
-        SoundManager.vibrate(vibration: .medium)
+        
         captureButtonEnabled = false
         
         captureModeControlEnabled = false
@@ -475,12 +430,15 @@ extension CameraManager {
                 self.captureButtonEnabled = true
 
                 self.captureModeControlEnabled = true
+                SoundManager.vibrate(vibration: .soft)
             }
         }
     }
     
     func focusAndExposeTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        showZoomControl = false
+        if showControls {
+            showControls = false
+        }
         let devicePoint = previewView.videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: gestureRecognizer.location(in: gestureRecognizer.view))
         focus(with: .autoFocus, exposureMode: .autoExpose, at: devicePoint, monitorSubjectAreaChange: true)
     }
@@ -494,8 +452,7 @@ extension CameraManager {
             
             DispatchQueue.main.async {
 
-                self.captureButtonEnabled = isSessionRunning && self.videoDeviceDiscoverySession.uniqueDevicePositionsCount > 1
-//                self.recordButtonEnabled = isSessionRunning && self.movieFileOutput != nil
+                self.captureButtonEnabled = self.captureMode == .photo ? (isSessionRunning && self.videoDeviceDiscoverySession.uniqueDevicePositionsCount > 1) : (isSessionRunning && self.movieFileOutput != nil)
                 self.captureModeControlEnabled = isSessionRunning
             }
         }
@@ -562,10 +519,10 @@ extension CameraManager {
                     self.session.startRunning()
                     self.isSessionRunning = self.session.isRunning
                 } else {
-                    DispatchQueue.main.async {
-                        //                        self.resumeButton.isHidden = false
-                        
-                    }
+//                    DispatchQueue.main.async {
+//                        //                        self.resumeButton.isHidden = false
+//
+//                    }
                 }
             }
         } else {
@@ -611,7 +568,7 @@ extension CameraManager {
         if let userInfoValue = notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as AnyObject?,
            let reasonIntegerValue = userInfoValue.integerValue,
            let reason = AVCaptureSession.InterruptionReason(rawValue: reasonIntegerValue) {
-            print("Capture session was interrupted with reason \(reason)")
+            print("Capture session was interrupted with reason \(reason.rawValue)")
             
             var showResumeButton = false
             if reason == .audioDeviceInUseByAnotherClient || reason == .videoDeviceInUseByAnotherClient {
@@ -620,9 +577,9 @@ extension CameraManager {
                 // Fade-in a label to inform the user that the camera is unavailable.
                 //                cameraUnavailableLabel.alpha = 0
                 //                cameraUnavailableLabel.isHidden = false
-                UIView.animate(withDuration: 0.25) {
-                    //                    self.cameraUnavailableLabel.alpha = 1
-                }
+//                UIView.animate(withDuration: 0.25) {
+//                                        self.cameraUnavailableLabel.alpha = 1
+//                }
             } else if reason == .videoDeviceNotAvailableDueToSystemPressure {
                 print("Session stopped running due to shutdown system pressure level.")
             }
@@ -630,14 +587,14 @@ extension CameraManager {
                 // Fade-in a button to enable the user to try to resume the session running.
                 //                resumeButton.alpha = 0
                 //                resumeButton.isHidden = false
-                UIView.animate(withDuration: 0.25) {
-                    //                    self.resumeButton.alpha = 1
-                }
+//                UIView.animate(withDuration: 0.25) {
+//                                        self.resumeButton.alpha = 1
+//                }
             }
         }
     }
     
-    func resumeInterruptedSession() {
+    private func resumeInterruptedSession() {
         
         sessionQueue.async {
             /*
@@ -655,7 +612,7 @@ extension CameraManager {
                     let alertController = UIAlertController(title: "AVCam", message: message, preferredStyle: .alert)
                     let cancelAction = UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"), style: .cancel, handler: nil)
                     alertController.addAction(cancelAction)
-                    //                    self.present(alertController, animated: true, completion: nil)
+                    UIApplication.getTopViewController()?.present(alertController, animated: true, completion: nil)
                 }
             } else {
                 DispatchQueue.main.async {
@@ -669,6 +626,7 @@ extension CameraManager {
     @objc
     func sessionInterruptionEnded(notification: NSNotification) {
         print("Capture session interruption ended")
+        resumeInterruptedSession()
         
         //        if !resumeButton.isHidden {
         //            UIView.animate(withDuration: 0.25,
@@ -910,11 +868,13 @@ extension CameraManager {
     }
     
     func willDisappear() {
+        photos.removeAll()
         sessionQueue.async {
             if self.setupResult == .success {
                 self.session.stopRunning()
                 self.isSessionRunning = self.session.isRunning
                 self.removeObservers()
+                
             }
         }
     }

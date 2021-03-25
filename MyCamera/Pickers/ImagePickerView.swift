@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Photos
 
 struct ImagePickerView: UIViewControllerRepresentable {
 
@@ -21,6 +22,7 @@ struct ImagePickerView: UIViewControllerRepresentable {
         x.mediaTypes = ["public.image", "public.movie"]
         x.allowsEditing = false
         x.delegate = context.coordinator
+        
         return x
     }
     
@@ -35,9 +37,9 @@ struct ImagePickerView: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = (info[.originalImage]) as? UIImage, let data = image.jpegData(compressionQuality: 1) {
-                
+                _ = Photo.create(data: data, isVideo: false)
                 picker.dismiss(animated: true) {
-                    _ = Photo.create(data: data, isVideo: false)
+                    
                 }
             } else if let videoURL = info[UIImagePickerController.InfoKey.mediaURL] as? URL, let data = try? Data(contentsOf: videoURL) {
                 _ = Photo.create(data: data, isVideo: true)
@@ -46,7 +48,26 @@ struct ImagePickerView: UIViewControllerRepresentable {
                 }
                 
             }
+            if let imageURL = info[UIImagePickerController.InfoKey.referenceURL] as? URL {
+                let alert = UIAlertController(title: "Delete Original Image?", message: nil, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Delete Source", style: .destructive, handler: { x in
+                    PHPhotoLibrary.shared().performChanges( {
+                        let imageAssetToDelete = PHAsset.fetchAssets(withALAssetURLs: [imageURL], options: nil)
+                        PHAssetChangeRequest.deleteAssets(imageAssetToDelete)
+                    },
+                        completionHandler: { success, error in
+                            
+                    })
+                }))
+            }
+
+        }
+        
+        private func askToDelete(url: URL) {
+            
         }
     }
 }
+
+
 

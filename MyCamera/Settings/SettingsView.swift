@@ -10,15 +10,14 @@ import AVFoundation
 
 private enum PresentViewType: Identifiable {
     var id: PresentViewType { return self }
-    case lockScreenView, imageGalleryView, setupView
+    case eulaView
 }
 
 
 struct SettingsView: View {
     
+   
     @AppStorage(UserdefaultManager.shared._hasShownOnboarding) private var hasShownOnboarding: Bool = UserdefaultManager.shared.hasShownOnboarding
-    @StateObject var currentLoginSession = CurrentLoginSession()
-    @Environment(\.presentationMode) var presentationMode
     @State private var presentViewType: PresentViewType?
     @AppStorage(UserdefaultManager.shared._offShutterSound) private var offShutterSound: Bool = UserdefaultManager.shared.offShutterSound
     @AppStorage(UserdefaultManager.shared._flashMode) private var flashMode: Int = UserdefaultManager.shared.flashMode.rawValue
@@ -27,33 +26,29 @@ struct SettingsView: View {
         
         Form {
             Section(header: Text("Albums and Passcodes").foregroundColor(Color(.tertiaryLabel))) {
-
-                Button(action: {
-                    presentViewType = .setupView
-                }) {
-                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "rectangle.stack.badge.plus", color: .blue)
+                
+                NavigationLink(destination: LockScreenView(lockScreenType: .newAlbum, completion: nil)) {
+                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "plus.circle.fill", color: .yellow)
                 }
-                Button(action: {
-                    presentViewType = .lockScreenView
-                }) {
-                    SettingCell(text: "Update Current Album", subtitle: nil, imageName: "lock.rectangle.stack", color: .blue)
+                
+                NavigationLink(destination: LockScreenView(lockScreenType: .updateCurrentAlbum, completion: nil)) {
+                    SettingCell(text: "Update Current Album", subtitle: nil, imageName: "mappin.circle.fill", color: .green)
                 }
-                Button(action: {
-                    presentViewType = .imageGalleryView
-                }) {
-                    SettingCell(text: "View Existing Album", subtitle: nil, imageName: "rectangle.stack.badge.person.crop", color: .blue)
+                
+                NavigationLink(destination: ImageGalleryView()) {
+                    SettingCell(text: "View Existing Album", subtitle: nil, imageName: "eye.circle.fill", color: .purple)
                 }
+                
                 Button(action: {
-                   
+                    PersistenceController.shared.deleteAll()
                 }) {
-                    SettingCell(text: "Clear All Albums", subtitle: nil, imageName: "rectangle.stack.badge.minus", color: .blue)
+                    SettingCell(text: "Clear All Albums", subtitle: nil, imageName: "trash.circle.fill", color: .red)
                 }
             }
             
             Section(header: Text("Camera Controls").foregroundColor(Color(.tertiaryLabel))) {
-    
                 Toggle(isOn: $offShutterSound) {
-                    Text("Mute Shutter Sound")
+                    Text("Mute Photo Capture Sound")
                 }
                 
                 HStack {
@@ -73,6 +68,11 @@ struct SettingsView: View {
                     UserdefaultManager.shared.hasShownOnboarding = false
                 }) {
                     SettingCell(text: "Show Onboarding", subtitle: nil, imageName: "house.fill", color: .green)
+                }
+                Button(action: {
+                    presentViewType = .eulaView
+                }) {
+                    SettingCell(text: "End User License Agreement", subtitle: nil, imageName: "shield.fill", color: .orange)
                 }
                 Button(action: {
                     UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:], completionHandler: nil)
@@ -97,7 +97,7 @@ struct SettingsView: View {
                 }
             }
         
-            Section(header: Text("Contacts").foregroundColor(Color(.tertiaryLabel))) {
+            Section(header: Text("Contacts").foregroundColor(Color(.tertiaryLabel)), footer: Text("Aung Ko Min (iOS Developer)\nSingapore\n+65 88585229\njonahaung@gmail.com").foregroundColor(.secondary).padding()) {
             
                 Button(action: {
                     SettingManager.shared.gotoPrivacyPolicy()
@@ -110,24 +110,13 @@ struct SettingsView: View {
                 }) {
                     SettingCell(text: "Contact Us", subtitle: nil, imageName: "phone.circle.fill", color: .purple)
                 }
-
             }
-           
         }
-        .foregroundColor(Color.primary)
         .navigationTitle("Settings")
-        .navigationBarItems(trailing: Button("Done", action: {
-            presentationMode.wrappedValue.dismiss()
-        }))
         .sheet(item: $presentViewType) { type in
             switch type {
-            case PresentViewType.lockScreenView:
-                LockScreenView().environmentObject(currentLoginSession)
-            case .imageGalleryView:
-                ImageGalleryView()
-                    .environmentObject(currentLoginSession)
-            case .setupView:
-                SetupView().environmentObject(currentLoginSession)
+            case .eulaView:
+                EULAView()
             }
         }
     }

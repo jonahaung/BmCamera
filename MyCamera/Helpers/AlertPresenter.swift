@@ -9,31 +9,35 @@ import Foundation
 import UIKit
 
 typealias Action = () -> Void
-typealias ActionPair = (String, Action)
+typealias ActionPair = (String, Action, style: UIAlertAction.Style)
 
 struct AlertPresenter {
     
     static func presentActionSheet(title: String? = nil , message: String? = nil, actions: [ActionPair]) {
-        SoundManager.vibrate(vibration: .medium)
         let x = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
 
         
         actions.forEach{ action in
-            let alertAction = UIAlertAction(title: action.0, style: .default) { _ in
+            let alertAction = UIAlertAction(title: action.0, style: action.style) { _ in
                 action.1()
             }
             x.addAction(alertAction)
         }
         
-        x.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        x.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
-        UIApplication.getTopViewController()?.present(x, animated: true, completion: nil)
+        UIApplication.getTopViewController()?.present(x, animated: true)
     }
     
-    static func show(title: String, message: String? = nil) {
+    static func show(title: String, message: String? = nil, completion: ((Bool)-> Void)? = nil) {
         let x = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
-        x.addAction(UIAlertAction(title: "OK", style: .cancel))
-        UIApplication.getTopViewController()?.present(x, animated: true, completion: nil)
+        x.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
+            completion?(true)
+        }))
+        x.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
+            completion?(false)
+        }))
+        UIApplication.getTopViewController()?.present(x, animated: true)
     }
     
 }

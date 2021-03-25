@@ -16,7 +16,7 @@ final class FocusRectangleView: UIView {
         self.init(frame: CGRect(x: touchPoint.x - (originalSize / 2), y: touchPoint.y - (originalSize / 2), width: originalSize, height: originalSize))
         
         layer.cornerRadius = bounds.height/2
-        backgroundColor = UIColor.separator
+        backgroundColor = UIColor.lightText
        
         UIView.animate(withDuration: 0.4, delay: 0.0, options: .curveEaseOut, animations: {
             self.frame.origin.x += (originalSize - finalSize) / 2

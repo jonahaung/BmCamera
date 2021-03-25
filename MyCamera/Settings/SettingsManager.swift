@@ -13,7 +13,7 @@ class SettingManager: NSObject {
     
     static let shared = SettingManager()
     func gotoPrivacyPolicy() {
-        guard let url = URL(string: "https://mmsgr-1b7a6.firebaseapp.com/MyanmarLens.html") else {
+        guard let url = URL(string: "https://mmsgr-1b7a6.web.app") else {
             return //be safe
         }
         
@@ -21,7 +21,16 @@ class SettingManager: NSObject {
     }
     
     func rateApp() {
-        SKStoreReviewController.requestReview()
+        for scene in UIApplication.shared.connectedScenes {
+                        if scene.activationState == .foregroundActive {
+                            if let windowScene = scene as? UIWindowScene {
+                                SKStoreReviewController.requestReview(in: windowScene)
+                            }
+                            
+                            break
+                        }
+                    }
+        
     }
     
     func shareApp() {
@@ -32,7 +41,9 @@ class SettingManager: NSObject {
     
     func gotoDeviceSettings() {
         let url = URL(string: UIApplication.openSettingsURLString)!
-        UIApplication.shared.openURL(url)
+        UIApplication.shared.open(url, options: [:]) { _ in
+            
+        }
     }
     
    

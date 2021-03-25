@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     
-    var observer: CameraManager
+    let observer: CameraManager
     
     typealias UIViewControllerType = CameraViewController
     
@@ -18,8 +18,7 @@ struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     }
     
     func makeUIViewController(context: UIViewControllerRepresentableContext<CameraViewControllerRepresentable>) -> CameraViewController {
-        let vc = CameraViewController(_manager: observer)
-        return vc
+        return CameraViewController(_manager: observer)
     }
     
     func updateUIViewController(_ uiViewController: CameraViewController, context: UIViewControllerRepresentableContext<CameraViewControllerRepresentable>) {

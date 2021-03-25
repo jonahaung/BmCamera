@@ -8,10 +8,11 @@
 import SwiftUI
 import AVKit
 
-struct Location: View {
-    
+struct WelcomeView: View {
+
     var body: some View {
         VStack {
+            
             Spacer()
             Image("welcome")
                 .resizable()
@@ -56,7 +57,11 @@ struct Location: View {
                     .padding()
             }
             Spacer()
+                
         }
+//        .navigationBarItems(trailing: NavigationLink(destination: LockScreenView(), isActive: $cangoToLockScreenView, label: {
+//
+//        }))
     }
     
     private func requestAccess() {
@@ -76,7 +81,7 @@ struct Location: View {
             })
             
         default:
-           break
+            break
         }
     }
 }

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-enum CaptureMode {
+enum CaptureMode: CaseIterable {
     
     case photo, movie
     
@@ -22,9 +22,9 @@ enum CaptureMode {
     var imageName: String {
         switch self {
         case .movie:
-            return "video.circle.fill"
+            return "video.fill"
         case .photo:
-            return "camera.circle.fill"
+            return "camera.fill"
         }
     }
     var captureButtonImageName: String {

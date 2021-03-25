@@ -114,44 +114,8 @@ class Utils {
         return false
     }
     
+    static var orientationLock = UIInterfaceOrientationMask.all
 
-    static func getThumbnail(data: Data) -> UIImage? {
-      let options = [
-          kCGImageSourceCreateThumbnailWithTransform: true,
-          kCGImageSourceCreateThumbnailFromImageAlways: true,
-          kCGImageSourceThumbnailMaxPixelSize: 300] as CFDictionary
-
-      guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-      guard let imageReference = CGImageSourceCreateThumbnailAtIndex(source, 0, options) else { return nil }
-
-      return UIImage(cgImage: imageReference)
-    }
-    
-    static func getCurrentFolderUrl() -> URL? {
-        guard let folerName = UserdefaultManager.shared.currentFolderName else {
-            print("No User")
-            return nil
-        }
-        let fileManager = FileManager.default
-        let folderPath = (NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] as NSString).appendingPathComponent(folerName)
-        if !fileManager.fileExists(atPath: folderPath) {
-            do {
-                try fileManager.createDirectory(atPath: folderPath, withIntermediateDirectories: true, attributes: nil)
-            } catch { print(error) }
-        }
-        
-        return URL(string: folderPath)
-    }
-    
-    
-    static func createDefaultPhotos() {
-        let imageNames = ["bagan", "beach", "cat", "photoAlbum"]
-        imageNames.forEach{
-            if let data = UIImage(named: $0)?.jpegData(compressionQuality: 1){
-                _ = Photo.create(data: data, isVideo: false)
-            }
-        }
-    }
 }
 
  let relativeDateFormat: DateFormatter = {

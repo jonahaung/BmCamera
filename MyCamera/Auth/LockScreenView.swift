@@ -7,58 +7,91 @@
 
 import SwiftUI
 
+enum LockScreenType {
+    
+    case appSetUp, newAlbum, updateCurrentAlbum, viewPhotoGallery
+    
+    var title: String {
+        switch self {
+        case .newAlbum:
+            return "Enter passcode for your new album"
+        case .updateCurrentAlbum:
+            return "Enter passcode for your desired album"
+        case .viewPhotoGallery:
+            return "Please enter Album Passcode"
+        case .appSetUp:
+            return "Setup Your First Album"
+        }
+    }
+}
 struct LockScreenView: View {
-   
-    private var digits = [1, 2, 3, 4, 5, 6]
-    @State private var password: String?
-    @EnvironmentObject var currentLoginSession: CurrentLoginSession
-    @State private var labelText = "Enter Passcode"
+    
+    let lockScreenType: LockScreenType
+
     @Environment(\.presentationMode) var presentationMode
+    private let digits = [1, 2, 3, 4, 5, 6]
+    @State private var password: String?
+    
+    @State private var labelText = "Login"
     @State private var existingPasswords = UserdefaultManager.shared.passWords
-    @State private var isNewUser = false
     
+    @State private var isNewUser = false {
+        didSet {
+            labelText = isNewUser ? LockScreenType.newAlbum.title : LockScreenType.viewPhotoGallery.title
+            tintColor = isNewUser ? Color(.systemGreen) : .blue
+        }
+    }
+    let completion: ((_ selectedImage: String) -> Void)?
+    @State private var isLoggedIn = false
     
+    @State private var tintColor: Color = .blue
     
     var body: some View {
         VStack {
-            topBar()
-            Image(systemName: "lock.fill" )
-                .font(.title).opacity(0.5)
+            Image(systemName: isLoggedIn ? "lock.open" : "lock.fill" ).font(.title).foregroundColor(.orange).padding()
             Spacer()
-            
             Text(labelText)
-                .font(.title3).bold()
+                .font(.headline)
                 .padding()
                 .multilineTextAlignment(.center)
             
             digitsView()
             Spacer()
-            numberPad()
-            Spacer()
+            numberPad
+           
             Spacer()
             bottomBar()
         }
         .padding()
+        .accentColor(tintColor)
+        .onAppear{
+            isNewUser = lockScreenType == .newAlbum || lockScreenType == .appSetUp
+            labelText = lockScreenType.title
+        }
+       
+       
     }
-    
-    
 }
 
 extension LockScreenView {
     
     private func updatePassword(number: Int) {
-        guard password?.count ?? 0 < 6 else { return }
-        SoundManager.playSound(tone: .Tock)
-        if let pw = password {
-            password = pw.appending(number.description)
-        } else {
-            password = number.description
+        guard password?.count ?? 0 < 7 else {
+            return
         }
-        checkPassword()
+        SoundManager.vibrate(vibration: .rigid)
+        
+        guard var pw = password else {
+            password = number.description
+            return
+        }
+        pw = pw.appending(number.description)
+        password = pw
+        checkPassword(pw: pw)
     }
     
-    private func checkPassword() {
-        guard let pw = password else { return }
+    private func checkPassword(pw: String) {
+    
         let isValid = pw.count == 6
        
         if isValid {
@@ -67,71 +100,82 @@ extension LockScreenView {
             }else {
                 authenticate(pw: pw)
             }
-        } else {
-            labelText = " "
+            
         }
     }
     
     private func authenticate(pw: String) {
         if existingPasswords.contains(pw) {
-            currentLoginSession.folderName = pw
+//            currentLoginSession.folderName = pw
             UserdefaultManager.shared.currentFolderName = pw
-//            currentLoginSession.isLoggingIn = false
-            presentationMode.wrappedValue.dismiss()
-        } else {
-            SoundManager.vibrate(vibration: .error)
-            labelText = "Album Doesn't Exist"
-            reset()
-        }
-    }
-    private func register(pw: String) {
-        if existingPasswords.contains(pw) {
-            labelText = "Album Already Exist"
-            SoundManager.vibrate(vibration: .error)
-        } else {
-            existingPasswords.append(pw)
-            UserdefaultManager.shared.passWords = existingPasswords
-            UserdefaultManager.shared.currentFolderName = pw
-            Utils.createDefaultPhotos()
-            labelText = "Success! Please login using your password"
-            isNewUser = false
-            reset()
-        }
-    }
-    private func reset() {
-        password = nil
-    }
-}
-extension LockScreenView {
-    private func topBar() -> some View {
-        return HStack {
-            Button {
-                isNewUser.toggle()
-                labelText = isNewUser ? "Enter passcode for your new album" : "Enter Passcode"
-            } label: {
-                let title = isNewUser ? "Login" : "New Album"
-                let imageName = isNewUser ? "lock.open" : "plus"
-                Label(title, systemImage: imageName)
+            isLoggedIn = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                reset()
+                completion?(pw)
+                switch lockScreenType {
+                case .viewPhotoGallery:
+                    
+                    presentationMode.wrappedValue.dismiss()
+                case .updateCurrentAlbum:
+                    presentationMode.wrappedValue.dismiss()
+                case .newAlbum:
+                    presentationMode.wrappedValue.dismiss()
+                case .appSetUp:
+                    UserdefaultManager.shared.doneSetup = true
+                }
             }
-            
-            Spacer()
-            Button {
-                presentationMode.wrappedValue.dismiss()
-            } label: {
-                Image(systemName: "xmark")
-            }
-        }.padding()
-    }
-    private func digitsView() -> some View {
-        return HStack(spacing: 5) {
-            ForEach(digits) { digit in
-                let imageName = (password?.count ?? 0) >= digit ? "circlebadge.fill" : "circlebadge"
-                Image(systemName: imageName)
+        } else {
+            isLoggedIn = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                AlertPresenter.show(title: "Wrong Passcode", message: "However, you can create a new album associated with this passcode") { _ in
+                    reset()
+                    isNewUser = false
+                }
             }
         }
     }
     
-    private func numberPad() -> some View {
+    private func register(pw: String) {
+        if existingPasswords.contains(pw) {
+            isLoggedIn = false
+            AlertPresenter.show(title: "Invalid Passcode", message: "This passcode has been assigned to one of the existing albums") { _ in
+                reset()
+                isNewUser = true
+            }
+        } else {
+            isLoggedIn = true
+            existingPasswords.append(pw)
+            UserdefaultManager.shared.passWords = existingPasswords
+            UserdefaultManager.shared.currentFolderName = pw
+            
+            AlertPresenter.show(title: "New Album Created", message: "An album associated with this passcode is successfully created. Please log-in to get access to this album") { _ in
+                
+                reset()
+                withAnimation{
+                    isNewUser = false
+                }
+                
+            }
+        }
+    }
+    private func reset() {
+        password = nil
+        
+    }
+}
+extension LockScreenView {
+    
+    private func digitsView() -> some View {
+        return HStack(spacing: 1) {
+            ForEach(digits) { digit in
+                let typed = (password?.count ?? 0) >= digit
+                let imageName = typed ? "circlebadge.fill" : "circlebadge"
+                Image(systemName: imageName).opacity(0.4)
+            }
+        }.font(.headline)
+    }
+    
+    private var numberPad: some View {
         return VStack {
             HStack {
                 creteKeyButton(number: 1)
@@ -155,33 +199,40 @@ extension LockScreenView {
     }
     
     private func bottomBar() -> some View {
-        return HStack {
-            
-            Button {
-                reset()
-            } label: {
-                Text("Reset")
-            }
-            .disabled(password == nil)
-            Spacer()
-            Button {
-                if let pw = password {
-                    self.password = String(pw.dropLast())
-                    if self.password?.isEmpty == true {
-                        self.password = nil
-                    }
+        return VStack {
+            HStack {
+                
+                Button {
+                    reset()
+                } label: {
+                    Text("Reset")
                 }
-            } label: {
-                Text("Delete")
+                .disabled(password == nil)
+                Spacer()
+                
+                Button {
+                    if let pw = password {
+                        self.password = String(pw.dropLast())
+                        if self.password?.isEmpty == true {
+                            self.password = nil
+                        }
+                    }
+                } label: {
+                    Text("Delete")
+                }
+                .disabled(password == nil)
+            }.font(.callout).padding()
+            
+            Button(isNewUser ? "Login" : "Add New Album") {
+                withAnimation{
+                    isNewUser.toggle()
+                }
             }
-            .disabled(password == nil)
-
         }.padding()
     }
     
     private func creteKeyButton(number: Int) -> some View {
         return Button {
-        
             updatePassword(number: number)
         } label: {
             Image(systemName: "\(number).circle.fill")

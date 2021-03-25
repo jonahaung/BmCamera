@@ -36,7 +36,7 @@ struct OnboardingView: View {
             
             
             NavigationLink(
-                destination: Location().navigationBarBackButtonHidden(true).navigationBarHidden(true),
+                destination: EULAView().navigationBarBackButtonHidden(true).navigationBarHidden(true),
                 label: {
                     Text("Start")
                         .font(.headline)
@@ -50,7 +50,7 @@ struct OnboardingView: View {
         
         .navigationBarItems(trailing:
                                 NavigationLink(
-                                    destination: Location()
+                                    destination: EULAView()
                                         .navigationBarBackButtonHidden(true).navigationBarHidden(true),
                                     label: {
                                         Image(systemName: "arrow.right")
