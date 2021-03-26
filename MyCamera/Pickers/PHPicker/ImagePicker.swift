@@ -27,7 +27,7 @@ struct ImagePicker: UIViewControllerRepresentable {
     }
     
     // Return array of UIImage
-    let completion: (_ selectedImage: [Photo]) -> Void
+    var completion: ((_ selectedImage: [Photo]) -> Void)? = nil
     
     func makeUIViewController(context: Context) -> PHPickerViewController {
         let controller = PHPickerViewController(configuration: configuration)
@@ -51,11 +51,13 @@ struct ImagePicker: UIViewControllerRepresentable {
         
         func picker(_: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             Promise.value(results).thenMap(load).done { photos in
-                self.parent.completion(photos)
+                
+                self.parent.completion?(photos)
+                self.parent.presentationMode.wrappedValue.dismiss()
             }.catch { error in
                 print(error.localizedDescription)
             }
-            parent.presentationMode.wrappedValue.dismiss()
+            
         }
         
         // Return the loaded value wrapped Promise

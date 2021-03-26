@@ -24,9 +24,11 @@ enum LockScreenType {
         }
     }
 }
+
 struct LockScreenView: View {
     
     let lockScreenType: LockScreenType
+    let completion: ((_ selectedImage: String) -> Void)?
 
     @Environment(\.presentationMode) var presentationMode
     private let digits = [1, 2, 3, 4, 5, 6]
@@ -34,24 +36,22 @@ struct LockScreenView: View {
     
     @State private var labelText = "Login"
     @State private var existingPasswords = UserdefaultManager.shared.passWords
-    
     @State private var isNewUser = false {
         didSet {
             labelText = isNewUser ? LockScreenType.newAlbum.title : LockScreenType.viewPhotoGallery.title
             tintColor = isNewUser ? Color(.systemGreen) : .blue
         }
     }
-    let completion: ((_ selectedImage: String) -> Void)?
-    @State private var isLoggedIn = false
     
+    @State private var isLoggedIn = false
     @State private var tintColor: Color = .blue
     
     var body: some View {
         VStack {
-            Image(systemName: isLoggedIn ? "lock.open" : "lock.fill" ).font(.title).foregroundColor(.orange).padding()
+            Image(systemName: isLoggedIn ? "lock.open" : "lock.fill" ).font(.largeTitle).foregroundColor(Color(.systemOrange)).padding()
             Spacer()
             Text(labelText)
-                .font(.headline)
+                .font(.system(size: 20, weight: .medium, design: .rounded))
                 .padding()
                 .multilineTextAlignment(.center)
             
@@ -106,7 +106,6 @@ extension LockScreenView {
     
     private func authenticate(pw: String) {
         if existingPasswords.contains(pw) {
-//            currentLoginSession.folderName = pw
             UserdefaultManager.shared.currentFolderName = pw
             isLoggedIn = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -114,11 +113,12 @@ extension LockScreenView {
                 completion?(pw)
                 switch lockScreenType {
                 case .viewPhotoGallery:
-                    
                     presentationMode.wrappedValue.dismiss()
                 case .updateCurrentAlbum:
+            
                     presentationMode.wrappedValue.dismiss()
                 case .newAlbum:
+            
                     presentationMode.wrappedValue.dismiss()
                 case .appSetUp:
                     UserdefaultManager.shared.doneSetup = true
@@ -147,7 +147,7 @@ extension LockScreenView {
             existingPasswords.append(pw)
             UserdefaultManager.shared.passWords = existingPasswords
             UserdefaultManager.shared.currentFolderName = pw
-            
+            Utils.createDefaultPhotos()
             AlertPresenter.show(title: "New Album Created", message: "An album associated with this passcode is successfully created. Please log-in to get access to this album") { _ in
                 
                 reset()
@@ -170,7 +170,7 @@ extension LockScreenView {
             ForEach(digits) { digit in
                 let typed = (password?.count ?? 0) >= digit
                 let imageName = typed ? "circlebadge.fill" : "circlebadge"
-                Image(systemName: imageName).opacity(0.4)
+                Image(systemName: imageName).opacity(0.5)
             }
         }.font(.headline)
     }
@@ -201,13 +201,7 @@ extension LockScreenView {
     private func bottomBar() -> some View {
         return VStack {
             HStack {
-                
-                Button {
-                    reset()
-                } label: {
-                    Text("Reset")
-                }
-                .disabled(password == nil)
+
                 Spacer()
                 
                 Button {
@@ -216,14 +210,14 @@ extension LockScreenView {
                         if self.password?.isEmpty == true {
                             self.password = nil
                         }
+                        SoundManager.vibrate(vibration: .rigid)
                     }
                 } label: {
-                    Text("Delete")
+                    Image(systemName: "chevron.backward.2").font(.system(size: 35, weight: .light, design: .rounded))
                 }
                 .disabled(password == nil)
             }.font(.callout).padding()
-            
-            Button(isNewUser ? "Login" : "Add New Album") {
+            Button(isNewUser ? "Already have the passcodes?" : "Add New Album") {
                 withAnimation{
                     isNewUser.toggle()
                 }

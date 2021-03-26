@@ -8,21 +8,37 @@
 import UIKit
 import AVFoundation
 import Photos
+import Vision
+
+public struct AlertError {
+    public var title: String = ""
+    public var message: String = ""
+    public var primaryButtonTitle = "Accept"
+    public var secondaryButtonTitle: String?
+    public var primaryAction: (() -> ())?
+    public var secondaryAction: (() -> ())?
+    
+    public init(title: String = "", message: String = "", primaryButtonTitle: String = "Accept", secondaryButtonTitle: String? = nil, primaryAction: (() -> ())? = nil, secondaryAction: (() -> ())? = nil) {
+        self.title = title
+        self.message = message
+        self.primaryAction = primaryAction
+        self.primaryButtonTitle = primaryButtonTitle
+        self.secondaryAction = secondaryAction
+    }
+}
+
 
 class CameraManager: NSObject, ObservableObject {
-
+    
+    var alertError: AlertError = AlertError()
+    
+    @Published var showAlertError = false
     @Published var captureButtonEnabled = true
     @Published var captureModeControlEnabled = true
     @Published var isRecordingVideo = false
     
     @Published var showControls = false
     @Published var photos: [Photo] = []
-    
-    @Published var zoom: CGFloat = 0 {
-        willSet {
-            zoomValueDidChange(Float(zoom/20))
-        }
-    }
     
     @Published var captureMode = CaptureMode.photo {
         willSet {
@@ -58,6 +74,7 @@ class CameraManager: NSObject, ObservableObject {
     private weak var timer: Timer?
     private var timeLeft = 4
     
+    private let videoDataOutputQueue = DispatchQueue(label: "net.machinethink.camera-queue")
     private enum SessionSetupResult {
         case success
         case notAuthorized
@@ -75,25 +92,19 @@ class CameraManager: NSObject, ObservableObject {
 
 extension CameraManager {
     
-    private func zoomValueDidChange(_ value: Float) {
-        do {
-            try defaultVideoDevice?.lockForConfiguration()
-            var zoomScale = CGFloat(value * 10.0)
-            let zoomFactor = defaultVideoDevice?.activeFormat.videoMaxZoomFactor
-           
-            if zoomScale < 1 {
-                zoomScale = 1
-            } else if zoomScale > zoomFactor! {
-                zoomScale = zoomFactor!
+    public func set(zoom: CGFloat){
+            let factor = zoom < 1 ? 1 : zoom
+            let device = self.videoDeviceInput.device
+            
+            do {
+                try device.lockForConfiguration()
+                device.videoZoomFactor = factor
+                device.unlockForConfiguration()
             }
-            defaultVideoDevice?.videoZoomFactor = zoomScale
-            defaultVideoDevice?.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 20)
-            defaultVideoDevice?.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 15)
-            defaultVideoDevice?.unlockForConfiguration()
-        } catch {
-            print("captureDevice?.lockForConfiguration() denied")
+            catch {
+                print(error.localizedDescription)
+            }
         }
-    }
 }
 
 
@@ -135,8 +146,10 @@ extension CameraManager {
                                                               willCapturePhotoAnimation: {
                 // Flash the screen to signal that AVCam took a photo.
                 DispatchQueue.main.async {
+                    
                     self.captureButtonEnabled = false
                     self.captureModeControlEnabled = false
+                    self.previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
                     self.previewView.videoPreviewLayer.opacity = 0
                     UIView.animate(withDuration: 0.25) {
                         self.previewView.videoPreviewLayer.opacity = 1
@@ -150,9 +163,10 @@ extension CameraManager {
                 }
             }, onCreatedPhoto: { photo in
                 Async.main {
-                    self.photos.append(photo)
                     self.captureButtonEnabled = true
                     self.captureModeControlEnabled = true
+                    self.previewView.videoPreviewLayer.videoGravity = .resizeAspect
+                    self.photos.append(photo)
                 }
                 
             }, photoProcessingHandler: { animate in
@@ -205,6 +219,7 @@ extension CameraManager {
                 
                 movieFileOutput.startRecording(to: outputURL, recordingDelegate: self)
                 Async.main {
+                    
                     self.photos.append(photo)
                     
                 }
@@ -240,6 +255,7 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
             self.startMovieTimer()
             self.captureButtonEnabled = true
             self.isRecordingVideo = true
+            self.previewView.videoPreviewLayer.videoGravity = .resizeAspect
             
         }
     }
@@ -282,6 +298,7 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
         // Enable the Camera and Record buttons to let the user switch camera and start another recording.
         DispatchQueue.main.async {
             // Only enable the ability to change camera if the device has more than one camera.
+            self.previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
             self.captureButtonEnabled = self.videoDeviceDiscoverySession.uniqueDevicePositionsCount > 1
             self.captureModeControlEnabled = true
             self.isRecordingVideo = false
@@ -314,7 +331,7 @@ extension CameraManager {
                 DispatchQueue.main.async {
                     self.captureModeControlEnabled = true
                     self.photoQualityPrioritizationModeIndex = .balanced
-                    
+                    self.previewView.videoPreviewLayer.videoGravity = .resizeAspect
                 }
             }
         } else if captureMode == CaptureMode.movie {
@@ -342,6 +359,7 @@ extension CameraManager {
                         SoundManager.vibrate(vibration: .soft)
                         self.captureModeControlEnabled = true
                         self.photoQualityPrioritizationModeIndex = .speed
+                        self.previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
                     }
                     
                 }
@@ -609,10 +627,8 @@ extension CameraManager {
             if !self.session.isRunning {
                 DispatchQueue.main.async {
                     let message = NSLocalizedString("Unable to resume", comment: "Alert message when unable to resume the session running")
-                    let alertController = UIAlertController(title: "AVCam", message: message, preferredStyle: .alert)
-                    let cancelAction = UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"), style: .cancel, handler: nil)
-                    alertController.addAction(cancelAction)
-                    UIApplication.getTopViewController()?.present(alertController, animated: true, completion: nil)
+                    self.alertError = AlertError(title: "MyCamera", message: message, primaryButtonTitle: "OK", secondaryButtonTitle: nil, primaryAction: nil, secondaryAction: nil)
+                    self.showAlertError = true
                 }
             } else {
                 DispatchQueue.main.async {
@@ -799,6 +815,10 @@ extension CameraManager {
             print("Could not create audio device input: \(error)")
         }
         
+        
+//        setupYOLO()
+        
+        
         // Add the photo output.
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
@@ -839,29 +859,21 @@ extension CameraManager {
                 DispatchQueue.main.async {
                     let changePrivacySetting = "AVCam doesn't have permission to use the camera, please change privacy settings"
                     let message = NSLocalizedString(changePrivacySetting, comment: "Alert message when the user has denied access to the camera")
-                    let alertController = UIAlertController(title: "AVCam", message: message, preferredStyle: .alert)
                     
-                    alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"), style: .cancel, handler: nil))
-                    
-                    alertController.addAction(UIAlertAction(title: NSLocalizedString("Settings", comment: "Alert button to open Settings"), style: .`default`,
-                                                            handler: { _ in
-                                                                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:], completionHandler: nil)
-                                                            }))
-                    
-                    UIApplication.getTopViewController()?.present(alertController, animated: true, completion: nil)
+                    self.alertError = AlertError(title: changePrivacySetting, message: message, primaryButtonTitle: "OK", secondaryButtonTitle: "Settings", primaryAction: nil, secondaryAction: {
+                        UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:], completionHandler: nil)
+                    })
                 }
                 
             case .configurationFailed:
                 DispatchQueue.main.async {
                     let alertMsg = "Alert message when something goes wrong during capture session configuration"
                     let message = NSLocalizedString("Unable to capture media", comment: alertMsg)
-                    let alertController = UIAlertController(title: "AVCam", message: message, preferredStyle: .alert)
+                    self.alertError = AlertError(title: alertMsg, message: message, primaryButtonTitle: "Ok", secondaryButtonTitle: "Cancel", primaryAction: {
+                        
+                    }, secondaryAction: nil)
+                    self.showAlertError = true
                     
-                    alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"),
-                                                            style: .cancel,
-                                                            handler: nil))
-                    
-                    UIApplication.getTopViewController()?.present(alertController, animated: true, completion: nil)
                 }
             }
         }
@@ -874,8 +886,149 @@ extension CameraManager {
                 self.session.stopRunning()
                 self.isSessionRunning = self.session.isRunning
                 self.removeObservers()
-                
             }
         }
     }
 }
+/*
+
+extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
+    
+    private func setupYOLO() {
+        let settings: [String : Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA),
+            ]
+        let videoOutput = AVCaptureVideoDataOutput()
+        videoOutput.videoSettings = settings
+        videoOutput.alwaysDiscardsLateVideoFrames = true
+        videoOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+        }
+        
+        // We want the buffers to be in portrait orientation otherwise they are
+        // rotated by 90 degrees. Need to set this _after_ addOutput()!
+        videoOutput.connection(with: AVMediaType.video)?.videoOrientation = .portrait
+    }
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        let deltaTime = timestamp - lastTimestamp
+        if deltaTime >= CMTimeMake(value: 1, timescale: Int32(framesPS)) {
+            lastTimestamp = timestamp
+            let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+            
+            semaphore.wait()
+
+            if let buffer = imageBuffer {
+                // For better throughput, perform the prediction on a background queue
+                // instead of on the VideoCapture queue. We use the semaphore to block
+                // the capture queue and drop frames when Core ML can't keep up.
+                DispatchQueue.global().async {
+                    self.predictUsingVision(pixelBuffer: buffer)
+                }
+            }
+        }
+    }
+
+
+    private func createColors() {
+        for r: CGFloat in [0.2, 0.4, 0.6, 0.85, 1.0] {
+            for g: CGFloat in [0.6, 0.7, 0.8, 0.9] {
+                for b: CGFloat in [0.6, 0.7, 0.8, 1.0] {
+                    let color = UIColor(red: r, green: g, blue: b, alpha: 1)
+                    colors.append(color)
+                }
+            }
+        }
+    }
+
+    private func createBoundingBoxes() {
+        for _ in 0..<YOLO.maxBoundingBoxes {
+            boundingBoxes.append(BoundingBox())
+        }
+    }
+
+    private func setUpVision() {
+        guard let visionModel = try? VNCoreMLModel(for: yolo.model.model) else {
+            print("Error: could not create Vision model")
+            return
+        }
+
+        request = VNCoreMLRequest(model: visionModel,
+                                  completionHandler: visionRequestDidComplete)
+
+        // NOTE: If you choose another crop/scale option, then you must also
+        // change how the BoundingBox objects get scaled when they are drawn.
+        // Currently they assume the full input image is used.
+        request.imageCropAndScaleOption = .scaleFill
+    }
+
+    
+    // MARK: - Doing inference
+
+    private func predictUsingVision(pixelBuffer: CVPixelBuffer) {
+        // Measure how long it takes to predict a single video frame. Note that
+        // predict() can be called on the next frame while the previous one is
+        // still being processed. Hence the need to queue up the start times.
+        startTimes.append(CACurrentMediaTime())
+
+        // Vision will automatically resize the input image.
+        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer)
+        try? handler.perform([request])
+    }
+
+    private func visionRequestDidComplete(request: VNRequest, error: Error?) {
+        guard let observations = request.results as? [VNCoreMLFeatureValueObservation],
+            let features = observations.first?.featureValue.multiArrayValue else {
+                return
+        }
+        let boundingBoxes = yolo.computeBoundingBoxes(features: features)
+        let elapsed = CACurrentMediaTime() - startTimes.remove(at: 0)
+        showOnMainThread(boundingBoxes, elapsed)
+    }
+
+    private func showOnMainThread(_ boundingBoxes: [YOLO.Prediction], _ elapsed: CFTimeInterval) {
+        DispatchQueue.main.async {
+            self.show(predictions: boundingBoxes)
+//            self.timeLabel.text = String(format: "Elapsed %.5f seconds - %.2f FPS", elapsed, self.fps)
+            self.semaphore.signal()
+        }
+    }
+
+    private func show(predictions: [YOLO.Prediction]) {
+        for i in 0..<boundingBoxes.count {
+            if i < predictions.count {
+                let prediction = predictions[i]
+
+                // The predicted bounding box is in the coordinate space of the input
+                // image, which is a square image of 416x416 pixels. We want to show it
+                // on the video preview, which is as wide as the screen and has a 4:3
+                // aspect ratio. The video preview also may be letterboxed at the top
+                // and bottom.
+                let width = previewView.bounds.width
+                let height = width * 4 / 3
+                let scaleX = width / CGFloat(YOLO.inputWidth)
+                let scaleY = height / CGFloat(YOLO.inputHeight)
+                let top = (previewView.bounds.height - height) / 2
+
+                // Translate and scale the rectangle to our own coordinate system.
+                var rect = prediction.rect
+                rect.origin.x *= scaleX
+                rect.origin.y *= scaleY
+                rect.origin.y += top
+                rect.size.width *= scaleX
+                rect.size.height *= scaleY
+
+                // Show the bounding box.
+                let label = String(format: "%@ %.1f",
+                                   labels[prediction.classIndex], prediction.score * 100)
+                let color = colors[prediction.classIndex]
+                boundingBoxes[i].show(frame: rect, label: label, color: color)
+            } else {
+                boundingBoxes[i].hide()
+            }
+        }
+    }
+}
+*/

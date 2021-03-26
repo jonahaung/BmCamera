@@ -14,7 +14,7 @@ typealias ActionPair = (String, Action, style: UIAlertAction.Style)
 struct AlertPresenter {
     
     static func presentActionSheet(title: String? = nil , message: String? = nil, actions: [ActionPair]) {
-        let x = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
+        let x = UIAlertController(title: title, message: message, preferredStyle: .alert)
 
         
         actions.forEach{ action in
@@ -30,7 +30,7 @@ struct AlertPresenter {
     }
     
     static func show(title: String, message: String? = nil, completion: ((Bool)-> Void)? = nil) {
-        let x = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
+        let x = UIAlertController(title: title, message: message, preferredStyle: .alert)
         x.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
             completion?(true)
         }))

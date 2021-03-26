@@ -16,38 +16,44 @@ struct ImageViewerView: View {
     @State private var image = Image(systemName: "circle.fill")
     @State private var isFavourite = false
     
+   
     
     var body: some View {
-        VStack {
-            
-            Spacer()
-            if photo.isVideo, let url = photo.mediaUrl {
-                VideoPlayer(player: AVPlayer(url:  url))
-            }else {
-               
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .onTapGesture {
-                        showImageViewer.toggle()
-                    }
-                    .navigationBarHidden(showImageViewer)
+        NavigationView{
+            VStack {
+                
+                Spacer()
+                if photo.isVideo, let url = photo.mediaUrl {
+                    VideoPlayer(player: AVPlayer(url:  url))
+                }else {
+                   
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .onTapGesture {
+                            showImageViewer.toggle()
+                        }
+                        .navigationBarHidden(showImageViewer)
+                        .pinchToZoom()
+                }
+                Spacer()
+                if Utils.isPotrait() {
+                    bottomBar()
+                }
             }
-            Spacer()
-            if Utils.isPotrait() {
-                bottomBar()
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(leading: Button("Cancel") {
+                presentationMode.wrappedValue.dismiss()
             }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarItems(trailing: Text(Int(photo.fileSize).byteSize).font(.footnote))
-        .navigationTitle("\(photo.date ?? Date(), formatter: relativeDateFormat)")
-        .overlay(ImageViewer(image: $image, viewerShown: $showImageViewer))
-        .onAppear{
-            if let image = photo.originalImage {
-                self.image = Image(uiImage: image)
+            , trailing: Text(Int(photo.fileSize).byteSize).font(.footnote))
+            .navigationTitle("\(photo.date ?? Date(), formatter: relativeDateFormat)")
+            .onAppear{
+                if let image = photo.originalImage {
+                    self.image = Image(uiImage: image)
+                }
+                
+                self.isFavourite = photo.isFavourite
             }
-            
-            self.isFavourite = photo.isFavourite
         }
         
     }
@@ -63,19 +69,7 @@ struct ImageViewerView: View {
             } label: {
                 Image(systemName: "square.and.arrow.up")
             }
-            Spacer()
-            Button {
-                
-                let action = {
-                    Photo.delete(photo: photo)
-                    presentationMode.wrappedValue.dismiss()
-                }
-                let actionPair = ActionPair("Confirm Delete", action, .destructive)
-                AlertPresenter.presentActionSheet(actions: [actionPair])
-                
-            } label: {
-                Image(systemName: "trash")
-            }
+            
             Spacer()
             Button {
                 SoundManager.vibrate(vibration: .selection)
@@ -88,10 +82,19 @@ struct ImageViewerView: View {
             }
             Spacer()
             Button {
-                presentationMode.wrappedValue.dismiss()
+                
+                let action = {
+                    Photo.delete(photo: photo)
+                    PersistenceController.shared.save()
+                    presentationMode.wrappedValue.dismiss()
+                }
+                let actionPair = ActionPair("Confirm Delete", action, .destructive)
+                AlertPresenter.presentActionSheet(title: "Delete this item?", actions: [actionPair])
+                
             } label: {
-                Text("Done")
+                Image(systemName: "trash")
             }
+            
         }.padding()
     }
     

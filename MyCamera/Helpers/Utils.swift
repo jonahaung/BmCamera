@@ -115,6 +115,20 @@ class Utils {
     }
     
     static var orientationLock = UIInterfaceOrientationMask.all
+    
+    static func createDefaultPhotos() {
+        
+        if let data = UIImage(named: "cat")?.jpegData(compressionQuality: 1) {
+            _ = Photo.create(data: data, isVideo: false)
+        }
+        if let data = UIImage(named: "dog")?.jpegData(compressionQuality: 1) {
+            _ = Photo.create(data: data, isVideo: false)
+        }
+        if let data = UIImage(named: "beach")?.jpegData(compressionQuality: 1) {
+            _ = Photo.create(data: data, isVideo: false)
+        }
+        
+    }
 
 }
 

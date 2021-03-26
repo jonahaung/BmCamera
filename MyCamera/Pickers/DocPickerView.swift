@@ -9,11 +9,12 @@ import SwiftUI
 import MobileCoreServices
 import PDFKit
 
+
 struct DocPickerView: UIViewControllerRepresentable {
     
     typealias UIViewControllerType = UIDocumentPickerViewController
     
-    let completion: (_ selectedImage: [Photo]) -> Void
+    var completion: ((_ selectedImage: [Photo]) -> Void)? = nil
     
     @Environment(\.presentationMode) var presentationMode
     
@@ -54,7 +55,8 @@ struct DocPickerView: UIViewControllerRepresentable {
                 }
                 if let image = UIImage(contentsOfFile: url.path), let data = image.jpegData(compressionQuality: 1) {
                     if let photo = Photo.create(data: data, isVideo: false) {
-                        parent.completion([photo])
+                        parent.completion?([photo])
+                        parent.presentationMode.wrappedValue.dismiss()
                     }
                     
                 }

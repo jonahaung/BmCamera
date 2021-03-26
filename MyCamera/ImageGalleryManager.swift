@@ -2,7 +2,7 @@
 //  ImageGalleryManager.swift
 //  MyCamera
 //
-//  Created by Aung Ko Min on 19/3/21.
+//  Created by Aung Ko Min on 26/3/21.
 //
 
 import Foundation
@@ -10,111 +10,105 @@ import CoreData
 
 class ImageGalleryManager: ObservableObject {
     
-    struct Section: Identifiable, Equatable {
-        var id: String { return date.description + photos.count.description }
+    struct SectionItem: Identifiable, Equatable {
+        
+        let id: String
         let date: Date
         let photos: [Photo]
         
-        
-    }
-    
-    var photos = [Photo]() {
-        didSet {
-            guard oldValue != photos else { return }
-            updateSections()
+        init(date: Date, photos: [Photo]) {
+            self.date = date
+            self.photos = photos
+            self.id = date.description + photos.count.description
+        }
+        var show: Bool = false
+        mutating func setShow(_show: Bool) {
+            show = _show
         }
     }
     
-    var sections = [Section]()
-    
-    
-    init() {
-        addObservers()
+    enum FilterMode: Identifiable {
+        var id: FilterMode { return self }
+        case favourite, video, photo, all
+        
+        var description: String {
+            switch self {
+            case .favourite:
+                return "Favourites"
+            case .video:
+                return "Videos"
+            case .photo:
+                return "Photos"
+            case .all:
+                return "All Items"
+            }
+        }
     }
+    var filterMode = FilterMode.all
+    var folderName: String?
+    var sections = [SectionItem]()
+    var selectedPhotos = [Photo]()
+    var selectedPhoto: Photo?
+    
     deinit {
-        removeObservers()
-        print("Gallery Deinit")
+        sections.removeAll()
+        selectedPhotos.removeAll()
+        print("Gallery Manager")
     }
     
-    func fetchPhoto() {
-        let folerName = UserdefaultManager.shared.currentFolderName ?? ""
+    func fetchPhotos() {
+        guard let folderName = folderName else { return }
+        
         let request: NSFetchRequest<Photo> = Photo.fetchRequest()
-        request.fetchBatchSize = 20
-        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false), NSSortDescriptor(key: "date", ascending: false)]
-        request.predicate = NSPredicate(format: "userId == %@", folerName)
+        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        var predicates = [NSPredicate(format: "userId == %@", folderName)]
+        switch filterMode {
+        case .all:
+            break
+        case .favourite:
+            let predicate = NSPredicate(format: "isFavourite == %@", NSNumber(value: true))
+            predicates.append(predicate)
+        case .video:
+            let predicate = NSPredicate(format: "isVideo == %@", NSNumber(value: true))
+            predicates.append(predicate)
+        case .photo:
+            let predicate = NSPredicate(format: "isVideo == %@", NSNumber(value: false))
+            predicates.append(predicate)
         
-        let context = PersistenceController.shared.container.viewContext
-        
+        }
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+        sections.removeAll()
         do {
-            self.photos = try context.fetch(request)
+            let photos = try PersistenceController.shared.container.viewContext.fetch(request)
+            var sections = [SectionItem]()
+            let groupsArray = photos.filter{ $0.date != nil }.groupSort(ascending: false, byDate: { $0.date!})
             
+            for group in groupsArray {
+                if let date = group.first?.date {
+                    var section = SectionItem(date: date, photos: group)
+                    if group == groupsArray.first {
+                        section.setShow(_show: true)
+                    }
+                    sections.append(section)
+                }
+            }
+            self.sections = sections
+            self.objectWillChange.send()
         } catch {
             print(error.localizedDescription)
         }
     }
     
-    private func updateSections() {
-        sections.removeAll()
-        let groupsArray = self.photos.groupSort(ascending: false, byDate: { $0.date!})
-        groupsArray.forEach {
-            if let date = $0.first?.date {
-                self.sections.append(Section(date: date, photos: $0))
+    func toggleSelect(photo: Photo) {
+        
+        SoundManager.vibrate(vibration: .selection)
+        if selectedPhotos.contains(photo) {
+            if let index = selectedPhotos.firstIndex(of: photo) {
+                selectedPhotos.remove(at: index)
             }
+        } else {
+            selectedPhotos.append(photo)
         }
         objectWillChange.send()
     }
-    
-    private func addObservers() {
-        // Observers when a context has been saved
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(self.contextSave(_ :)),
-                                               name: NSNotification.Name.NSManagedObjectContextDidSave,
-                                               object: nil)
-
-
-        
-    }
-    private func removeObservers() {
-        // Observers when a context has been saved
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.NSManagedObjectContextDidSave, object: nil)
-        
-    }
-    @objc private func contextSave(_ notification: Notification) {
-        // Retrieves the context saved from the notification
-           guard let context = notification.object as? NSManagedObjectContext else { return }
-
-           // Checks if the parent context is the main one
-        if context === PersistenceController.shared.container.viewContext {
-
-            fetchPhoto()
-        }
-        
-    }
 }
-
-
-extension Sequence {
-    func groupSort(ascending: Bool = true, byDate dateKey: (Iterator.Element) -> Date) -> [[Iterator.Element]] {
-        var categories: [[Iterator.Element]] = []
-        for element in self {
-            let key = dateKey(element)
-            guard let dayIndex = categories.firstIndex(where: { $0.contains(where: { Calendar.current.isDate(dateKey($0), inSameDayAs: key) }) }) else {
-                guard let nextIndex = categories.firstIndex(where: { $0.contains(where: { dateKey($0).compare(key) == (ascending ? .orderedDescending : .orderedAscending) }) }) else {
-                    categories.append([element])
-                    continue
-                }
-                categories.insert([element], at: nextIndex)
-                continue
-            }
-
-            guard let nextIndex = categories[dayIndex].firstIndex(where: { dateKey($0).compare(key) == (ascending ? .orderedDescending : .orderedAscending) }) else {
-                categories[dayIndex].append(element)
-                continue
-            }
-            categories[dayIndex].insert(element, at: nextIndex)
-        }
-        return categories
-    }
-}
-
-

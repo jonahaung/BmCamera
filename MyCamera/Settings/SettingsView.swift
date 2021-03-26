@@ -10,7 +10,7 @@ import AVFoundation
 
 private enum PresentViewType: Identifiable {
     var id: PresentViewType { return self }
-    case eulaView
+    case eulaView, lockScreenCreateNewAlbum, lockScreenUpdateCurrentAlbum, lockScreenViewExistingAlbum
 }
 
 
@@ -26,23 +26,26 @@ struct SettingsView: View {
         
         Form {
             Section(header: Text("Albums and Passcodes").foregroundColor(Color(.tertiaryLabel))) {
-                
-                NavigationLink(destination: LockScreenView(lockScreenType: .newAlbum, completion: nil)) {
-                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "plus.circle.fill", color: .yellow)
+                Button(action: {
+                    presentViewType = .lockScreenCreateNewAlbum
+                }) {
+                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "key", color: .orange)
                 }
-                
-                NavigationLink(destination: LockScreenView(lockScreenType: .updateCurrentAlbum, completion: nil)) {
-                    SettingCell(text: "Update Current Album", subtitle: nil, imageName: "mappin.circle.fill", color: .green)
+                Button(action: {
+                    presentViewType = .lockScreenUpdateCurrentAlbum
+                }) {
+                    SettingCell(text: "Update Current Album", subtitle: nil, imageName: "lock", color: .green)
                 }
-                
-                NavigationLink(destination: ImageGalleryView()) {
-                    SettingCell(text: "View Existing Album", subtitle: nil, imageName: "eye.circle.fill", color: .purple)
+                Button(action: {
+                    presentViewType = .lockScreenViewExistingAlbum
+                }) {
+                    SettingCell(text: "View Existing Album", subtitle: nil, imageName: "lock.open", color: .purple)
                 }
-                
+        
                 Button(action: {
                     PersistenceController.shared.deleteAll()
                 }) {
-                    SettingCell(text: "Clear All Albums", subtitle: nil, imageName: "trash.circle.fill", color: .red)
+                    SettingCell(text: "Clear All Albums", subtitle: nil, imageName: "lock.slash", color: .red)
                 }
             }
             
@@ -117,6 +120,12 @@ struct SettingsView: View {
             switch type {
             case .eulaView:
                 EULAView()
+            case .lockScreenCreateNewAlbum:
+                LockScreenView(lockScreenType: .newAlbum, completion: nil)
+            case .lockScreenUpdateCurrentAlbum:
+                LockScreenView(lockScreenType: .updateCurrentAlbum, completion: nil)
+            case .lockScreenViewExistingAlbum:
+                ImageGalleryView()
             }
         }
     }

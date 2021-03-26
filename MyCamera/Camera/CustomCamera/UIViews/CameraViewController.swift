@@ -13,12 +13,13 @@ class CameraViewController: UIViewController {
     
     let manager: CameraManager
     var previewView: PreviewView
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
+//        previewView.videoPreviewLayer.videoGravity = .resizeAspect
         let gesture = UITapGestureRecognizer(target: self, action: #selector(focusAndExposeTap(_:)))
         previewView.addGestureRecognizer(gesture)
+        previewView.backgroundColor = .darkText
     }
     
     init(_manager: CameraManager) {
@@ -44,6 +45,7 @@ class CameraViewController: UIViewController {
 //        super.viewWillDisappear(animated)
 //    }
     
+  
     override var shouldAutorotate: Bool {
         // Disable autorotation of the interface when recording is in progress.
         if let movieFileOutput = manager.movieFileOutput {
@@ -53,7 +55,7 @@ class CameraViewController: UIViewController {
     }
     
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return .all
+        return .portrait
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

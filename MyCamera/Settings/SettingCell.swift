@@ -18,10 +18,10 @@ struct SettingCell: View {
         
         HStack(spacing: 9) {
             Image(systemName: imageName)
-                .font(.title3)
+                
                 .foregroundColor(color)
                 .opacity(0.7)
-            
+                .padding(5)
             Text(text)
             if let x = subtitle {
                 Spacer()

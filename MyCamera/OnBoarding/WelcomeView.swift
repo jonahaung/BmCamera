@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVKit
+import Photos
 
 struct WelcomeView: View {
 
@@ -59,9 +60,6 @@ struct WelcomeView: View {
             Spacer()
                 
         }
-//        .navigationBarItems(trailing: NavigationLink(destination: LockScreenView(), isActive: $cangoToLockScreenView, label: {
-//
-//        }))
     }
     
     private func requestAccess() {
@@ -74,7 +72,10 @@ struct WelcomeView: View {
                 if granted {
                     AVCaptureDevice.requestAccess(for: .audio, completionHandler: { granted in
                         if granted {
-                            UserdefaultManager.shared.hasShownOnboarding = true
+                            PHPhotoLibrary.requestAuthorization { status in
+                                UserdefaultManager.shared.hasShownOnboarding = true
+                            }
+
                         }
                     })
                 }

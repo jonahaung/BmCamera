@@ -9,33 +9,45 @@ import SwiftUI
 import AVFoundation
 
 struct CameraView: View {
-   
-
+    
+    @State var currentZoomFactor: CGFloat = 1.0
     @StateObject private var manager = CameraManager()
     @State private var isPotrait = Utils.isPotrait()
-    @AppStorage(UserdefaultManager.shared._flashMode) private var flashMode: Int = UserdefaultManager.shared.flashMode.rawValue
+    @State private var flashMode: AVCaptureDevice.FlashMode = UserdefaultManager.shared.flashMode
     @State private var selectedPhoto: Photo?
     
     @AppStorage(UserdefaultManager.shared._offShutterSound) private var offShutterSound: Bool = UserdefaultManager.shared.offShutterSound
     
     var body: some View {
-        ZStack {
-            Color.black
-            CameraViewControllerRepresentable(observer: manager)
-            controlView
-        }
-        .accentColor(.white)
-        .edgesIgnoringSafeArea(isPotrait ? .vertical : .all)
-        .onAppear(perform: manager.willAppear)
-        .onDisappear(perform: manager.willDisappear)
-        .onRotate { _ in
-            if manager.isSessionRunning {
-                self.isPotrait = Utils.isPotrait()
+        GeometryReader { reader in
+            Color(.darkText).edgesIgnoringSafeArea(.all)
+            ZStack {
+               
+                CameraViewControllerRepresentable(manager: manager)
+                    .gesture( dragGesture(reader: reader) )
+                controlView
             }
+            
+            .accentColor(.white)
+//            .edgesIgnoringSafeArea(isPotrait ? .vertical : .all)
+            .onAppear(perform: manager.willAppear)
+            .onDisappear(perform: manager.willDisappear)
+            .onRotate { _ in
+                if manager.isSessionRunning {
+                    self.isPotrait = Utils.isPotrait()
+                }
+            }
+            .sheet(item: $selectedPhoto) { photo in
+                ImageViewerView(photo: photo)
+            }
+            
+            .alert(isPresented: $manager.showAlertError, content: {
+                Alert(title: Text(manager.alertError.title), message: Text(manager.alertError.message), dismissButton: .default(Text(manager.alertError.primaryButtonTitle), action: {
+                    manager.alertError.primaryAction?()
+                }))
+            })
         }
-        .sheet(item: $selectedPhoto) { photo in
-            ImageViewerView(photo: photo)
-        }
+        
     }
     
 }
@@ -44,6 +56,25 @@ struct CameraView: View {
 
 // Control Views
 extension CameraView {
+    
+    
+    private func dragGesture(reader: GeometryProxy) -> some Gesture {
+        return DragGesture().onChanged({ val in
+            //  Only accept vertical drag
+            if abs(val.translation.height) > abs(val.translation.width) {
+                
+                let percentage: CGFloat = -(val.translation.height / reader.size.height)
+                
+                let calc = currentZoomFactor + percentage
+                //  Limit zoom factor to a maximum of 5x and a minimum of 1x
+                let zoomFactor: CGFloat = min(max(calc, 1), 5)
+                //  Store the newly calculated zoom factor
+                currentZoomFactor = zoomFactor
+                //  Sets the zoom factor to the capture device session
+                manager.set(zoom: zoomFactor)
+            }
+        })
+    }
     
     private var controlView: some View {
         return Group {
@@ -95,9 +126,9 @@ extension CameraView {
                     Text("Flash Mode").padding(.trailing)
                     Spacer()
                     Picker(selection: $flashMode, label: EmptyView()) {
-                        Text("Off").tag(AVCaptureDevice.FlashMode.off.rawValue)
-                        Text("On").tag(AVCaptureDevice.FlashMode.on.rawValue)
-                        Text("Auto").tag(AVCaptureDevice.FlashMode.auto.rawValue)
+                        Text("Off").tag(AVCaptureDevice.FlashMode.off)
+                        Text("On").tag(AVCaptureDevice.FlashMode.on)
+                        Text("Auto").tag(AVCaptureDevice.FlashMode.auto)
                     }.pickerStyle(SegmentedPickerStyle())
                 }
             }
@@ -110,11 +141,14 @@ extension CameraView {
                 }.pickerStyle(SegmentedPickerStyle())
                 Divider()
                 HStack {
-                    Text("Zoom").padding(.trailing)
-                    Spacer()
-                    Slider(value: $manager.zoom, in: 0...20)
+                    
+                    Slider(value: $currentZoomFactor, in: 0...5, step: 0.2, onEditingChanged: { _ in
+                        manager.set(zoom: currentZoomFactor)
+                    }, minimumValueLabel: Text("\(Int(currentZoomFactor))"), maximumValueLabel: Text("5")) {
+                        EmptyView()
+                    }
                 }
-
+                
             }
         }
         .foregroundColor(Color(.lightText))
@@ -131,11 +165,11 @@ extension CameraView {
             cameraControl
             Spacer()
             if manager.isRecordingVideo {
-                Text(Date().addingTimeInterval(TimeInterval(manager.movieTime)), style: .timer).bold().foregroundColor(.yellow)
+                Text(Date().addingTimeInterval(TimeInterval(manager.movieTime)), style: .timer).foregroundColor(.yellow)
                 Spacer()
             }
             settingButton
-
+            
         }
     }
     
@@ -143,18 +177,21 @@ extension CameraView {
         return HStack {
             getTopBarItems()
         }
-        .padding(.horizontal)
-        .padding(.top, 50)
-        .background(Blur(style: .systemChromeMaterialDark))
+//        .padding()
+//        .padding(.horizontal)
+//        .padding(.top, 50)
+        .background(Color.black)
     }
     
     private var leftBar: some View {
         return VStack {
             getTopBarItems()
         }
-        .padding(.horizontal)
-        .padding(.leading, 20)
-        .background(Blur(style: .systemChromeMaterialDark))
+//        .padding()
+        .background(Color.black)
+//        .padding(.horizontal)
+//        .padding(.leading, 20)
+//        .background(Blur(style: .systemChromeMaterialDark))
     }
     
     
@@ -176,18 +213,22 @@ extension CameraView {
         return HStack(alignment: .bottom) {
             getBottomBarItems()
         }
-        .padding(.top)
-        .padding(.bottom, 40)
-        .background(Blur(style: .systemChromeMaterialDark))
+        .padding()
+        .background(Color.black)
+//        .padding(.top)
+//        .padding(.bottom, 40)
+//        .background(Color(.darkText))
     }
     
     private var rightBar: some View {
         return VStack() {
             getBottomBarItems()
         }
-        .padding(.horizontal)
-        .padding(.trailing, 30)
-        .background((Blur(style: .systemChromeMaterialDark)))
+        .padding()
+        .background(Color.black)
+//        .padding(.horizontal)
+//        .padding(.trailing, 30)
+//        .background((Blur(style: .systemChromeMaterialDark)))
     }
     
     // Bottom Bar II
@@ -224,7 +265,7 @@ extension CameraView {
                 .shadow(radius: 5)
                 .zIndex(2)
                 .accentColor(accentColor)
-                
+            
             
         }.disabled(!manager.captureButtonEnabled)
     }
@@ -241,8 +282,8 @@ extension CameraView {
         .frame(maxWidth: 100, maxHeight: 50)
         
     }
-
-
+    
+    
     // Camera Control
     private var cameraControl: some View {
         return Button {
@@ -257,21 +298,22 @@ extension CameraView {
     // Flash
     private var flashModeButton: some View {
         return Button {
-            var mode = AVCaptureDevice.FlashMode(rawValue: flashMode) ?? .off
-            switch mode {
+            
+            switch flashMode {
             case .off:
-                mode = .on
+                flashMode = .on
             case .on:
-                mode = .auto
+                flashMode = .auto
             case .auto:
-                mode = .off
+                flashMode = .off
             @unknown default:
-                break
+                flashMode = .auto
             }
-            flashMode = AVCaptureDevice.FlashMode(rawValue: mode.rawValue)!.rawValue
+            
+            UserdefaultManager.shared.flashMode = flashMode
             
         } label: {
-            Image(systemName: AVCaptureDevice.FlashMode(rawValue: flashMode)?.imageName ?? "").padding()
+            Image(systemName: flashMode.imageName).padding()
         }
     }
     // CameraMode
@@ -282,7 +324,7 @@ extension CameraView {
         } label: {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .padding()
-                
+            
         }
         .disabled(!manager.captureButtonEnabled)
         
@@ -296,7 +338,7 @@ extension CameraView {
                     Image(systemName: "\(manager.photos.count).circle.fill").padding()
                 } else {
                     Image(systemName: "photo.on.rectangle.angled").padding()
-                        
+                    
                 }
             }
             
@@ -311,7 +353,7 @@ extension CameraView {
             Image(systemName: "ellipsis").padding()
         }
     }
-
+    
     // Thumbnil
     
     private func thumbnilButton() -> some View {
@@ -320,14 +362,16 @@ extension CameraView {
                 Button {
                     selectedPhoto = photo
                 } label: {
-                    Image(uiImage: image)
+                    
+                    Image(uiImage:image)
                         .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 100)
-                        .cornerRadius(8)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 70)
+                        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        .animation(.spring())
+                    
+                    
                 }
-                
-                .buttonStyle(PlainButtonStyle())
             }
         }
     }

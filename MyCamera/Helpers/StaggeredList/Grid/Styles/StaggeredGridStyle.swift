@@ -14,7 +14,7 @@ public struct StaggeredGridStyle: GridStyle {
         axis == .horizontal
     }
 
-    public init(_ axis: Axis = .vertical, tracks: Tracks, spacing: CGFloat = 8) {
+    public init(_ axis: Axis = .vertical, tracks: Tracks, spacing: CGFloat = 3) {
         self.tracks = tracks
         self.spacing = spacing
         self.axis = axis
@@ -56,7 +56,7 @@ public struct StaggeredGridStyle: GridStyle {
     }
     
     private func layoutPreferences(tracks: Int, spacing: CGFloat, axis: Axis, itemSize: CGSize, preferences: GridPreferences) -> GridPreferences {
-        var tracksLengths = Array(repeating: CGFloat(0.0), count: tracks)
+        var tracksLengths = Array(repeating: CGFloat.zero, count: tracks)
         var newPreferences: GridPreferences = GridPreferences(items: [])
         
         preferences.items.forEach { preference in
