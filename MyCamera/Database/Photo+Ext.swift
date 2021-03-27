@@ -81,7 +81,11 @@ extension Photo {
         photo.date = Date()
         photo.isVideo = isVideo
         
-//        PersistenceController.shared.save()
+        do {
+            try context.save()
+        } catch {
+            print(error.localizedDescription)
+        }
         
         return context.object(with: photo.objectID) as? Photo
     }
@@ -116,17 +120,21 @@ extension Photo {
             }catch {
                 print(error)
             }
-            
         } else {
             print("File does not exist")
         }
-        PersistenceController.shared.container.viewContext.delete(photo)
-//        PersistenceController.shared.save()
+        let context = PersistenceController.shared.container.viewContext
+        if context.hasChanges {
+            try? context.save()
+        }
+        context.delete(photo)
+        try? context.save()
     }
     
     static func fetch(for folderName: String) -> [Photo]{
         let request: NSFetchRequest<Photo> = Photo.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        request.includesPendingChanges = false
+//        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
         request.predicate = NSPredicate(format: "userId == %@", folderName)
         
         let context = PersistenceController.shared.container.viewContext
@@ -138,7 +146,5 @@ extension Photo {
             return []
         }
     }
-    
-    
 }
 

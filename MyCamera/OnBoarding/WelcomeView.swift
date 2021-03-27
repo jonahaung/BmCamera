@@ -21,7 +21,7 @@ struct WelcomeView: View {
             Text("Hi, nice to meet you !")
                 .font(.title)
                 .bold()
-            Text("Choose your location to find \nrestraurants around you. ")
+            Text("We need the following permissions \nfrom you.")
                 .font(.title3)
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(#colorLiteral(red: 0.501960814, green: 0.501960814, blue: 0.501960814, alpha: 1)))

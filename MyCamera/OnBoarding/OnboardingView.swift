@@ -22,11 +22,13 @@ struct OnboardingView: View {
                                 .resizable()
                                 .scaledToFit()
                             Text(page.title)
-                                .font(.title).bold()
-                                .padding(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/, 20)
+                                .font(.system(size: 26, weight: .semibold, design: .rounded))
+                                .padding(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/, 20).multilineTextAlignment(.center)
                             Text(page.descrip)
+                                .font(.callout)
                                 .multilineTextAlignment(.center)
-                                .padding(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/, /*@START_MENU_TOKEN@*/10/*@END_MENU_TOKEN@*/)
+                                .padding(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/, /*@START_MENU_TOKEN@*/10/*@END_MENU_TOKEN@*/).multilineTextAlignment(.center)
+                                .foregroundColor(Color(#colorLiteral(red: 0.501960814, green: 0.501960814, blue: 0.501960814, alpha: 1)))
                         }
                         .opacity(Double(g.frame(in : . global).minX)/200+1)
                     }
@@ -36,7 +38,7 @@ struct OnboardingView: View {
             
             
             NavigationLink(
-                destination: EULAView().navigationBarBackButtonHidden(true).navigationBarHidden(true),
+                destination: EULAView(isFirstTime: true).navigationBarBackButtonHidden(true).navigationBarHidden(true),
                 label: {
                     Text("Start")
                         .font(.headline)
@@ -50,7 +52,7 @@ struct OnboardingView: View {
         
         .navigationBarItems(trailing:
                                 NavigationLink(
-                                    destination: EULAView()
+                                    destination: EULAView(isFirstTime: true)
                                         .navigationBarBackButtonHidden(true).navigationBarHidden(true),
                                     label: {
                                         Image(systemName: "arrow.right")

@@ -37,6 +37,12 @@
 		476E195525F8604D00C83053 /* PhotoCaptureProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476E195025F8604D00C83053 /* PhotoCaptureProcessor.swift */; };
 		476E195725F8604D00C83053 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476E195225F8604D00C83053 /* PreviewView.swift */; };
 		476E195825F8604D00C83053 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476E195325F8604D00C83053 /* CameraViewController.swift */; };
+		476FA2E3260ED52200B0BE4F /* CoreDataContextObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476FA2E2260ED52200B0BE4F /* CoreDataContextObserver.swift */; };
+		476FA2E6260ED8D700B0BE4F /* ImageGallery+Extentions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476FA2E5260ED8D700B0BE4F /* ImageGallery+Extentions.swift */; };
+		476FA2EA260F1F8000B0BE4F /* PhotoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476FA2E9260F1F8000B0BE4F /* PhotoItem.swift */; };
+		476FA2ED260F1FD600B0BE4F /* PhotoSectionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476FA2EC260F1FD600B0BE4F /* PhotoSectionItem.swift */; };
+		476FA2F0260F202100B0BE4F /* ImageGalleryFilterMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476FA2EF260F202100B0BE4F /* ImageGalleryFilterMode.swift */; };
+		476FA2F3260F231800B0BE4F /* ImageGallerySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476FA2F2260F231800B0BE4F /* ImageGallerySection.swift */; };
 		477BCB8B2605F99800167CC2 /* BlurredView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477BCB8A2605F99800167CC2 /* BlurredView.swift */; };
 		477BCB8E2605FCB200167CC2 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477BCB8D2605FCB200167CC2 /* ViewModifiers.swift */; };
 		47850543260351B3002DD549 /* Grid+Inits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47850531260351B3002DD549 /* Grid+Inits.swift */; };
@@ -101,6 +107,12 @@
 		476E195025F8604D00C83053 /* PhotoCaptureProcessor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoCaptureProcessor.swift; sourceTree = "<group>"; };
 		476E195225F8604D00C83053 /* PreviewView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
 		476E195325F8604D00C83053 /* CameraViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
+		476FA2E2260ED52200B0BE4F /* CoreDataContextObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataContextObserver.swift; sourceTree = "<group>"; };
+		476FA2E5260ED8D700B0BE4F /* ImageGallery+Extentions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImageGallery+Extentions.swift"; sourceTree = "<group>"; };
+		476FA2E9260F1F8000B0BE4F /* PhotoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoItem.swift; sourceTree = "<group>"; };
+		476FA2EC260F1FD600B0BE4F /* PhotoSectionItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSectionItem.swift; sourceTree = "<group>"; };
+		476FA2EF260F202100B0BE4F /* ImageGalleryFilterMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGalleryFilterMode.swift; sourceTree = "<group>"; };
+		476FA2F2260F231800B0BE4F /* ImageGallerySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGallerySection.swift; sourceTree = "<group>"; };
 		477BCB8A2605F99800167CC2 /* BlurredView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurredView.swift; sourceTree = "<group>"; };
 		477BCB8D2605FCB200167CC2 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		47850531260351B3002DD549 /* Grid+Inits.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Grid+Inits.swift"; sourceTree = "<group>"; };
@@ -224,7 +236,10 @@
 				4785055E2603EBB3002DD549 /* ImageGalleryView.swift */,
 				471B977B260DC07B0026EE0A /* ImageGalleryManager.swift */,
 				4785055F2603EBB3002DD549 /* ImageGallaryCell.swift */,
+				476FA2F2260F231800B0BE4F /* ImageGallerySection.swift */,
 				47FA287B2604F84B0092D4C7 /* ImageOverlayView.swift */,
+				476FA2E5260ED8D700B0BE4F /* ImageGallery+Extentions.swift */,
+				476FA2E8260F1F7200B0BE4F /* Models */,
 			);
 			name = ImageGallery;
 			sourceTree = "<group>";
@@ -296,6 +311,16 @@
 				4732FEB2260CE0A1009C283B /* PHPicker */,
 			);
 			path = Pickers;
+			sourceTree = "<group>";
+		};
+		476FA2E8260F1F7200B0BE4F /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				476FA2E9260F1F8000B0BE4F /* PhotoItem.swift */,
+				476FA2EC260F1FD600B0BE4F /* PhotoSectionItem.swift */,
+				476FA2EF260F202100B0BE4F /* ImageGalleryFilterMode.swift */,
+			);
+			name = Models;
 			sourceTree = "<group>";
 		};
 		477BCB892605F98300167CC2 /* SubViews */ = {
@@ -380,6 +405,7 @@
 				47F88BA525F91DC500974BD9 /* Persistence.swift */,
 				47BC4311260BBEC400CCA975 /* Photo+Ext.swift */,
 				47F88BA125F91D9F00974BD9 /* MyCamera.xcdatamodeld */,
+				476FA2E2260ED52200B0BE4F /* CoreDataContextObserver.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -471,6 +497,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				476FA2E3260ED52200B0BE4F /* CoreDataContextObserver.swift in Sources */,
+				476FA2F0260F202100B0BE4F /* ImageGalleryFilterMode.swift in Sources */,
 				4750315125F7AC1A00CF46FE /* UserdefaultManager.swift in Sources */,
 				475A213125FA12CB0046904D /* ImageViewer.swift in Sources */,
 				47FA286C2604770B0092D4C7 /* onBoardingPage.swift in Sources */,
@@ -483,6 +511,7 @@
 				472E949A26010278007664F9 /* CaptureMode.swift in Sources */,
 				47850543260351B3002DD549 /* Grid+Inits.swift in Sources */,
 				472A801B25F75D4500E24110 /* CameraView.swift in Sources */,
+				476FA2EA260F1F8000B0BE4F /* PhotoItem.swift in Sources */,
 				4750314B25F78D3F00CF46FE /* LockScreenView.swift in Sources */,
 				472A805425F7667C00E24110 /* Extensions.swift in Sources */,
 				47850548260351B3002DD549 /* GridPreferencesKey.swift in Sources */,
@@ -504,9 +533,11 @@
 				472E949526010223007664F9 /* CameraViewControllerRepresentable.swift in Sources */,
 				4785054F260351B3002DD549 /* ModularGridStyle.swift in Sources */,
 				4785054E260351B3002DD549 /* GridItemBoundsPreferencesKey.swift in Sources */,
+				476FA2F3260F231800B0BE4F /* ImageGallerySection.swift in Sources */,
 				47FA286D2604770B0092D4C7 /* WelcomeView.swift in Sources */,
 				47850545260351B3002DD549 /* Tracks.swift in Sources */,
 				47FA287C2604F84B0092D4C7 /* ImageOverlayView.swift in Sources */,
+				476FA2ED260F1FD600B0BE4F /* PhotoSectionItem.swift in Sources */,
 				477BCB8B2605F99800167CC2 /* BlurredView.swift in Sources */,
 				47F88BA625F91DC500974BD9 /* Persistence.swift in Sources */,
 				47BC4315260BC37000CCA975 /* FileManagerDefault.swift in Sources */,
@@ -517,6 +548,7 @@
 				4732FEB8260CE0B4009C283B /* ImagePicker.swift in Sources */,
 				472E94B72601843B007664F9 /* SettingsView.swift in Sources */,
 				47850549260351B3002DD549 /* View+GridStyle.swift in Sources */,
+				476FA2E6260ED8D700B0BE4F /* ImageGallery+Extentions.swift in Sources */,
 				472E94BA260185D5007664F9 /* SettingCell.swift in Sources */,
 				4785054C260351B3002DD549 /* GridPreferencesModifier.swift in Sources */,
 				472A803525F75DBD00E24110 /* Async.swift in Sources */,
@@ -654,6 +686,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1;
 				DEVELOPMENT_ASSET_PATHS = "\"MyCamera/Preview Content\"";
 				DEVELOPMENT_TEAM = HJ9L53D9PB;
 				ENABLE_PREVIEWS = YES;
@@ -676,6 +709,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1;
 				DEVELOPMENT_ASSET_PATHS = "\"MyCamera/Preview Content\"";
 				DEVELOPMENT_TEAM = HJ9L53D9PB;
 				ENABLE_PREVIEWS = YES;

@@ -29,7 +29,7 @@ struct SettingsView: View {
                 Button(action: {
                     presentViewType = .lockScreenCreateNewAlbum
                 }) {
-                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "key", color: .orange)
+                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "key", color: Color(.brown))
                 }
                 Button(action: {
                     presentViewType = .lockScreenUpdateCurrentAlbum
@@ -65,18 +65,7 @@ struct SettingsView: View {
                 }
             }
         
-            
-            Section(header: Text("App Settings").foregroundColor(Color(.tertiaryLabel))) {
-                Button(action: {
-                    UserdefaultManager.shared.hasShownOnboarding = false
-                }) {
-                    SettingCell(text: "Show Onboarding", subtitle: nil, imageName: "house.fill", color: .green)
-                }
-                Button(action: {
-                    presentViewType = .eulaView
-                }) {
-                    SettingCell(text: "End User License Agreement", subtitle: nil, imageName: "shield.fill", color: .orange)
-                }
+            Section(header: Text("Device Settings").foregroundColor(Color(.tertiaryLabel))) {
                 Button(action: {
                     UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:], completionHandler: nil)
                 }) {
@@ -84,10 +73,30 @@ struct SettingsView: View {
                 }
             }
             
-            Section(header: Text("App Informations").foregroundColor(Color(.tertiaryLabel))) {
             
-                SettingCell(text: "App Version", subtitle: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, imageName: "app.badge.fill", color: .green)
+            Section(header: Text("App Settings").foregroundColor(Color(.tertiaryLabel))) {
+                SettingCell(text: "App Version", subtitle: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, imageName: "app.badge.fill", color: .purple)
                     .foregroundColor(.secondary)
+                Button(action: {
+                    UserdefaultManager.shared.hasShownOnboarding = false
+                }) {
+                    SettingCell(text: "About the App", subtitle: nil, imageName: "house.fill", color: .green)
+                }
+                Button(action: {
+                    presentViewType = .eulaView
+                }) {
+                    SettingCell(text: "User License Agreement", subtitle: nil, imageName: "shield.fill", color: .orange)
+                }
+                Button(action: {
+                    SettingManager.shared.gotoPrivacyPolicy()
+                }) {
+                    SettingCell(text: "Privacy Policy Website", subtitle: nil, imageName: "lock.shield.fill", color: .blue)
+                }
+                
+            }
+            
+            Section(header: Text("App Informations").foregroundColor(Color(.tertiaryLabel))) {
+        
                 Button(action: {
                     SettingManager.shared.shareApp()
                 }) {
@@ -96,18 +105,11 @@ struct SettingsView: View {
                 Button(action: {
                     SettingManager.shared.rateApp()
                 }) {
-                    SettingCell(text: "Rate App", subtitle: nil, imageName: "star.fill", color: Color(.systemIndigo))
+                    SettingCell(text: "Rate on AppStore", subtitle: nil, imageName: "star.fill", color: Color(.systemIndigo))
                 }
             }
         
             Section(header: Text("Contacts").foregroundColor(Color(.tertiaryLabel)), footer: Text("Aung Ko Min (iOS Developer)\nSingapore\n+65 88585229\njonahaung@gmail.com").foregroundColor(.secondary).padding()) {
-            
-                Button(action: {
-                    SettingManager.shared.gotoPrivacyPolicy()
-                }) {
-                    SettingCell(text: "Privacy Policy", subtitle: nil, imageName: "lock.shield.fill", color: .blue)
-                }
-                
                 Button(action: {
                     SettingManager.shared.gotoContactUs()
                 }) {
@@ -119,7 +121,7 @@ struct SettingsView: View {
         .sheet(item: $presentViewType) { type in
             switch type {
             case .eulaView:
-                EULAView()
+                EULAView(isFirstTime: false)
             case .lockScreenCreateNewAlbum:
                 LockScreenView(lockScreenType: .newAlbum, completion: nil)
             case .lockScreenUpdateCurrentAlbum:

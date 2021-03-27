@@ -6,109 +6,91 @@
 //
 
 import Foundation
-import CoreData
+import UIKit
 
 class ImageGalleryManager: ObservableObject {
+
+    var folderName: String?
+    var sections = [PhotoSectionItem]()
+    var selectedPhoto: Photo?
     
-    struct SectionItem: Identifiable, Equatable {
-        
-        let id: String
-        let date: Date
-        let photos: [Photo]
-        
-        init(date: Date, photos: [Photo]) {
-            self.date = date
-            self.photos = photos
-            self.id = date.description + photos.count.description
-        }
-        var show: Bool = false
-        mutating func setShow(_show: Bool) {
-            show = _show
-        }
-    }
+    @Published var selectedItems: [PhotoItem] = []
     
-    enum FilterMode: Identifiable {
-        var id: FilterMode { return self }
-        case favourite, video, photo, all
-        
-        var description: String {
-            switch self {
-            case .favourite:
-                return "Favourites"
-            case .video:
-                return "Videos"
-            case .photo:
-                return "Photos"
-            case .all:
-                return "All Items"
+    private var photos = [Photo]()
+    private var observer: CoreDataContextObserver?
+    
+    init() {
+        observer = CoreDataContextObserver(context: PersistenceController.shared.container.viewContext)
+        observer?.contextChangeBlock = { [weak self] _, changes in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                var canReload = false
+                changes.forEach{
+                    switch $0 {
+                    case .inserted(let object):
+                        guard let photo = PersistenceController.shared.container.viewContext.object(with: object.objectID) as? Photo else { return }
+                        self.photos.append(photo)
+                        canReload = true
+                    default:
+                        break
+                    }
+                }
+                if canReload {
+                    self.makeGroupSections(photos: self.photos)
+                }
+                
             }
         }
     }
-    var filterMode = FilterMode.all
-    var folderName: String?
-    var sections = [SectionItem]()
-    var selectedPhotos = [Photo]()
-    var selectedPhoto: Photo?
+    
     
     deinit {
-        sections.removeAll()
-        selectedPhotos.removeAll()
+        clear()
         print("Gallery Manager")
     }
     
-    func fetchPhotos() {
-        guard let folderName = folderName else { return }
-        
-        let request: NSFetchRequest<Photo> = Photo.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
-        var predicates = [NSPredicate(format: "userId == %@", folderName)]
-        switch filterMode {
-        case .all:
-            break
-        case .favourite:
-            let predicate = NSPredicate(format: "isFavourite == %@", NSNumber(value: true))
-            predicates.append(predicate)
-        case .video:
-            let predicate = NSPredicate(format: "isVideo == %@", NSNumber(value: true))
-            predicates.append(predicate)
-        case .photo:
-            let predicate = NSPredicate(format: "isVideo == %@", NSNumber(value: false))
-            predicates.append(predicate)
-        
-        }
-        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    func clear() {
+        observer?.unobserveAllObjects()
+        observer = nil
+        photos.removeAll()
         sections.removeAll()
-        do {
-            let photos = try PersistenceController.shared.container.viewContext.fetch(request)
-            var sections = [SectionItem]()
-            let groupsArray = photos.filter{ $0.date != nil }.groupSort(ascending: false, byDate: { $0.date!})
-            
-            for group in groupsArray {
-                if let date = group.first?.date {
-                    var section = SectionItem(date: date, photos: group)
-                    if group == groupsArray.first {
-                        section.setShow(_show: true)
-                    }
-                    sections.append(section)
-                }
-            }
-            self.sections = sections
-            self.objectWillChange.send()
-        } catch {
-            print(error.localizedDescription)
-        }
+        print("Cleared")
     }
     
-    func toggleSelect(photo: Photo) {
+    func fetchPhotos(filterMode: ImageGalleryFilterMode) {
+        guard let folderName = folderName else { return }
         
-        SoundManager.vibrate(vibration: .selection)
-        if selectedPhotos.contains(photo) {
-            if let index = selectedPhotos.firstIndex(of: photo) {
-                selectedPhotos.remove(at: index)
-            }
-        } else {
-            selectedPhotos.append(photo)
+        let photos = Photo.fetch(for: folderName)
+        switch filterMode {
+        case .all:
+            self.photos = photos
+        case .favourite:
+            self.photos = photos.filter{ $0.isFavourite }
+        case .video:
+            self.photos = photos.filter{ $0.isVideo }
+        case .photo:
+            self.photos = photos.filter{ $0.isVideo == false }
         }
+        
+        makeGroupSections(photos: self.photos)
+    }
+    
+    private func makeGroupSections(photos: [Photo]) {
+        let groupsArray = photos.filter{ $0.date != nil }.groupSort(ascending: false, byDate: { $0.date!})
+        var newSections = [PhotoSectionItem]()
+        for (i, group) in groupsArray.enumerated() {
+            if let date = group.first?.date {
+                let section = PhotoSectionItem(date: date, photoItems: group.map{ PhotoItem(photo: $0, observer: observer) })
+                if i == 0 {
+                    section.show = true
+                }
+                newSections.append(section)
+            }
+        }
+        
+        sections = newSections
         objectWillChange.send()
     }
+    
 }

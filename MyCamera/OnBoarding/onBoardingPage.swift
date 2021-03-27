@@ -15,7 +15,10 @@ struct Page : Identifiable {
 }
 
 var OnboardingData = [
-    Page(id: 0, image: "password", title: "Discover places near you", descrip: "We make it simple to find the food you crave. Enter your  home addresse and let us do the rest."),
-    Page(id: 1, image: "photoAlbum", title: "Choose a Tasty Dish", descrip: "We make it simple to find the food you crave. Enter your  home addresse and let us do the rest."),
-    Page(id: 2, image: "bagan", title: "Your Food is on the way", descrip: "We make it simple to find the food you crave. Enter your  home addresse and let us do the rest.")
+    Page(id: 0, image: "photoAlbum", title: "Custom Photo & Video Camera", descrip: "We make it simple to capture photos & videos directly from the app. Media items taken from the app are directly saved into the most recently accessed album"),
+    
+    Page(id: 1, image: "photoAlbum", title: "One Passcode to One Album", descrip: "You can create as many private albums as possible along with its unique passcode. What album you chose to show to someone is totally up to you"),
+    Page(id: 2, image: "photoAlbum", title: "Keep Your Passcodes Serious", descrip: "Album Passcodes are unrecoverable. When you lost your passcode, you will also lost the album and all of its media contents"),
+    
+    Page(id: 3, image: "photoAlbum", title: "Keep Your Album Information Unknown", descrip: "No one can know how many passcodes & albums you have created and each and every album is inaccessible without the passcode")
 ]

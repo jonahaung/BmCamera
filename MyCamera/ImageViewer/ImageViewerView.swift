@@ -10,13 +10,14 @@ import AVKit
 
 struct ImageViewerView: View {
     
-    @State var photo: Photo
+    let photo: Photo
     @Environment(\.presentationMode) var presentationMode
-    @State private var showImageViewer = false
-    @State private var image = Image(systemName: "circle.fill")
     @State private var isFavourite = false
     
-   
+    init(photo: Photo) {
+        self.photo = photo
+        self.isFavourite = photo.isFavourite
+    }
     
     var body: some View {
         NavigationView{
@@ -26,15 +27,13 @@ struct ImageViewerView: View {
                 if photo.isVideo, let url = photo.mediaUrl {
                     VideoPlayer(player: AVPlayer(url:  url))
                 }else {
-                   
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .onTapGesture {
-                            showImageViewer.toggle()
-                        }
-                        .navigationBarHidden(showImageViewer)
-                        .pinchToZoom()
+                    if let image = photo.originalImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .pinchToZoom()
+                    }
+                    
                 }
                 Spacer()
                 if Utils.isPotrait() {
@@ -48,11 +47,7 @@ struct ImageViewerView: View {
             , trailing: Text(Int(photo.fileSize).byteSize).font(.footnote))
             .navigationTitle("\(photo.date ?? Date(), formatter: relativeDateFormat)")
             .onAppear{
-                if let image = photo.originalImage {
-                    self.image = Image(uiImage: image)
-                }
-                
-                self.isFavourite = photo.isFavourite
+                isFavourite = photo.isFavourite
             }
         }
         
@@ -74,7 +69,6 @@ struct ImageViewerView: View {
             Button {
                 SoundManager.vibrate(vibration: .selection)
                 photo.isFavourite.toggle()
-                PersistenceController.shared.container.viewContext.refresh(photo, mergeChanges: true)
                 isFavourite = photo.isFavourite
             } label: {
                 Image(systemName: isFavourite ? "heart.fill" : "heart")
@@ -82,10 +76,9 @@ struct ImageViewerView: View {
             }
             Spacer()
             Button {
-                
                 let action = {
                     Photo.delete(photo: photo)
-                    PersistenceController.shared.save()
+                   
                     presentationMode.wrappedValue.dismiss()
                 }
                 let actionPair = ActionPair("Confirm Delete", action, .destructive)

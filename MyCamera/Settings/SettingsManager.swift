@@ -13,7 +13,7 @@ class SettingManager: NSObject {
     
     static let shared = SettingManager()
     func gotoPrivacyPolicy() {
-        guard let url = URL(string: "https://mmsgr-1b7a6.web.app") else {
+        guard let url = URL(string: "https://bmcamera-b40b2.web.app") else {
             return //be safe
         }
         
@@ -51,7 +51,7 @@ class SettingManager: NSObject {
         if MFMailComposeViewController.canSendMail() {
             let mail = MFMailComposeViewController()
             mail.mailComposeDelegate = self
-            mail.setSubject("Myanmar Lens: Feedback")
+            mail.setSubject("BmCamera: Feedback")
             mail.setToRecipients(["jonahaung@gmail.com"])
             
             UIApplication.getTopViewController()?.present(mail, animated: true, completion: nil)

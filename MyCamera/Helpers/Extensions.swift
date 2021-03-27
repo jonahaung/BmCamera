@@ -52,7 +52,7 @@ extension UIImage {
     
     func getThumbnail() -> UIImage? {
         
-        return scaledWithMaxWidthOrHeightValue(value: 100)
+        return scaledWithMaxWidthOrHeightValue(value: 200)
         
     }
     func square() -> UIImage? {
@@ -172,8 +172,9 @@ extension URL {
         let thumnailTime = CMTimeMake(value: 1, timescale: 1) //5
         do {
             let cgThumbImage = try avAssetImageGenerator.copyCGImage(at: thumnailTime, actualTime: nil) //6
-            let thumbNailImage = UIImage(cgImage: cgThumbImage) //7
-            return thumbNailImage.scaledWithMaxWidthOrHeightValue(value: 100)
+            let thumbNailImage = UIImage(cgImage: cgThumbImage).scaledWithMaxWidthOrHeightValue(value: 200) //7
+            
+            return thumbNailImage?.square()
         } catch {
             print(error.localizedDescription) //10
             return nil
