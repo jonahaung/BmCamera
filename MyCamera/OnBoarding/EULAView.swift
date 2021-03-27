@@ -51,7 +51,7 @@ struct EULAView: View {
     BY CLICKING ON THE 'I AGREE & CONTINUE' BUTTON, YOU EXPRESSLY CONSENT TO BE BOUND BY ITS TERMS AND CONDITIONS AND GRANT TO BmCamera THE RIGHTS SET FORTH HEREIN.
     """
     
-    let isFirstTime: Bool
+    let showAgreementButton: Bool
     @Environment(\.presentationMode) var presentationMode
     var body: some View {
         VStack {
@@ -62,7 +62,7 @@ struct EULAView: View {
                 Text(subHeadText).font(.caption2).italic()
                 Text(bodyText).font(.footnote)
             }
-            if isFirstTime {
+            if showAgreementButton {
                 Spacer()
                 NavigationLink(
                     destination: WelcomeView(),

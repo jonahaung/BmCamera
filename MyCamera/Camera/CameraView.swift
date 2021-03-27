@@ -10,13 +10,24 @@ import AVFoundation
 
 struct CameraView: View {
     
+    enum ActionSheetType: Identifiable {
+        var id: ActionSheetType { return self }
+        case lockScreen
+    }
+    enum SheetType: Identifiable {
+        var id: SheetType { return self }
+        case imageViewer, updateCurrentAlbum
+    }
+    
+    @State private var actionSheetType: ActionSheetType?
+    @State private var sheetType: SheetType?
     @State var currentZoomFactor: CGFloat = 1.0
     @StateObject private var manager = CameraManager()
     @State private var isPotrait = Utils.isPotrait()
-    @State private var flashMode: AVCaptureDevice.FlashMode = UserdefaultManager.shared.flashMode
-    @State private var selectedPhoto: Photo?
     
+    @AppStorage(UserdefaultManager.shared._flashMode) private var flashMode: Int = UserdefaultManager.shared.flashMode.rawValue
     @AppStorage(UserdefaultManager.shared._offShutterSound) private var offShutterSound: Bool = UserdefaultManager.shared.offShutterSound
+    @AppStorage(UserdefaultManager.shared._photoQualityPrioritizationMode) private var photoQualityPrioritizationModeIndex: Int = UserdefaultManager.shared.photoQualityPrioritizationMode.rawValue
     
     var body: some View {
         GeometryReader { reader in
@@ -28,7 +39,7 @@ struct CameraView: View {
                 controlView
             }
             
-            .accentColor(.white)
+            .accentColor(Color(.opaqueSeparator))
 //            .edgesIgnoringSafeArea(isPotrait ? .vertical : .all)
             .onAppear(perform: manager.willAppear)
             .onDisappear(perform: manager.willDisappear)
@@ -37,13 +48,29 @@ struct CameraView: View {
                     self.isPotrait = Utils.isPotrait()
                 }
             }
-            .sheet(item: $selectedPhoto) { photo in
-                ImageViewerView(photo: photo)
-            }
+            .actionSheet(item: $actionSheetType, content: { type in
+                switch type {
+                case .lockScreen:
+                    return LockActionSheet()
+                }
+            })
             
-            .alert(isPresented: $manager.showAlertError, content: {
-                Alert(title: Text(manager.alertError.title), message: Text(manager.alertError.message), dismissButton: .default(Text(manager.alertError.primaryButtonTitle), action: {
-                    manager.alertError.primaryAction?()
+            .sheet(item: $sheetType) { type in
+                switch type {
+                case .imageViewer:
+                    if let photo = manager.photos.last {
+                        ImageViewerView(photo: photo)
+                    }
+                    
+                case .updateCurrentAlbum:
+                    LockScreenView(lockScreenType: .updateCurrentAlbum, completion: nil).onDisappear{
+                        self.manager.alertError = AlertError(title: "Current album is updated to passcode - \(UserdefaultManager.shared.currentFolderName ?? "nil")", message: "All photos and videos captured by this camera will be saved into this album", primaryButtonTitle: "OK")
+                    }
+                }
+            }
+            .alert(item: $manager.alertError, content: { alertError in
+                Alert(title: Text(alertError.title), message: Text(alertError.message), dismissButton: .default(Text(alertError.primaryButtonTitle), action: {
+                    alertError.primaryAction?()
                 }))
             })
         }
@@ -52,12 +79,21 @@ struct CameraView: View {
     
 }
 
-
-
-// Control Views
+// Drag
 extension CameraView {
     
-    
+    private func LockActionSheet() -> ActionSheet {
+        return ActionSheet(
+            title: Text("Your Current Album passcode is - \(UserdefaultManager.shared.currentFolderName ?? "")"),
+            message: Text("All photos and videos captured by this camera will be saved into this album"),
+            buttons: [
+                .default(Text("Switch to another album"), action: {
+                    sheetType = .updateCurrentAlbum
+                }),
+                .cancel()
+            ]
+        )
+    }
     private func dragGesture(reader: GeometryProxy) -> some Gesture {
         return DragGesture().onChanged({ val in
             //  Only accept vertical drag
@@ -75,6 +111,11 @@ extension CameraView {
             }
         })
     }
+}
+
+
+// Control Views
+extension CameraView {
     
     private var controlView: some View {
         return Group {
@@ -126,18 +167,18 @@ extension CameraView {
                     Text("Flash Mode").padding(.trailing)
                     Spacer()
                     Picker(selection: $flashMode, label: EmptyView()) {
-                        Text("Off").tag(AVCaptureDevice.FlashMode.off)
-                        Text("On").tag(AVCaptureDevice.FlashMode.on)
-                        Text("Auto").tag(AVCaptureDevice.FlashMode.auto)
+                        Text(AVCaptureDevice.FlashMode.off.description).tag(AVCaptureDevice.FlashMode.off.rawValue)
+                        Text(AVCaptureDevice.FlashMode.on.description).tag(AVCaptureDevice.FlashMode.on.rawValue)
+                        Text(AVCaptureDevice.FlashMode.auto.description).tag(AVCaptureDevice.FlashMode.auto.rawValue)
                     }.pickerStyle(SegmentedPickerStyle())
                 }
             }
             Divider()
             Section(header: Text("Photo Quality")) {
-                Picker(selection: $manager.photoQualityPrioritizationModeIndex, label: EmptyView()) {
-                    Text("Speed").tag(AVCapturePhotoOutput.QualityPrioritization.speed)
-                    Text("Balanced").tag(AVCapturePhotoOutput.QualityPrioritization.balanced)
-                    Text("Quality").tag(AVCapturePhotoOutput.QualityPrioritization.quality)
+                Picker(selection: $photoQualityPrioritizationModeIndex, label: Text("Photo Quality")) {
+                    Text(AVCapturePhotoOutput.QualityPrioritization.speed.description).tag(AVCapturePhotoOutput.QualityPrioritization.speed.rawValue)
+                    Text(AVCapturePhotoOutput.QualityPrioritization.balanced.description).tag(AVCapturePhotoOutput.QualityPrioritization.balanced.rawValue)
+                    Text(AVCapturePhotoOutput.QualityPrioritization.quality.description).tag(AVCapturePhotoOutput.QualityPrioritization.quality.rawValue)
                 }.pickerStyle(SegmentedPickerStyle())
                 Divider()
                 HStack {
@@ -161,13 +202,14 @@ extension CameraView {
     // Top Bar
     private func getTopBarItems() -> some View {
         return Group {
+            cameraControlButton
             flashModeButton
-            cameraControl
             Spacer()
             if manager.isRecordingVideo {
                 Text(Date().addingTimeInterval(TimeInterval(manager.movieTime)), style: .timer).foregroundColor(.yellow)
                 Spacer()
             }
+            lockButton
             settingButton
             
         }
@@ -176,7 +218,7 @@ extension CameraView {
     private var topBar: some View {
         return HStack {
             getTopBarItems()
-        }
+        }.padding(.horizontal)
 //        .padding()
 //        .padding(.horizontal)
 //        .padding(.top, 50)
@@ -186,7 +228,7 @@ extension CameraView {
     private var leftBar: some View {
         return VStack {
             getTopBarItems()
-        }
+        }.padding(.vertical)
 //        .padding()
         .background(Color.black)
 //        .padding(.horizontal)
@@ -283,37 +325,44 @@ extension CameraView {
         
     }
     
+    // Lock
+    private var lockButton: some View {
+        return Button {
+            actionSheetType = .lockScreen
+        } label: {
+            Image(systemName: "lock.open")
+        }
+    }
     
     // Camera Control
-    private var cameraControl: some View {
+    private var cameraControlButton: some View {
         return Button {
             withAnimation{
                 manager.showControls.toggle()
             }
             
         } label: {
-            Image(systemName: "slider.horizontal.below.rectangle").padding()
+            Image(systemName: "slider.horizontal.below.rectangle")
         }
     }
     // Flash
     private var flashModeButton: some View {
         return Button {
-            
-            switch flashMode {
+            var mode = AVCaptureDevice.FlashMode(rawValue: flashMode) ?? .off
+            switch mode {
             case .off:
-                flashMode = .on
+                mode = AVCaptureDevice.FlashMode.on
             case .on:
-                flashMode = .auto
+                mode =  AVCaptureDevice.FlashMode.auto
             case .auto:
-                flashMode = .off
+                mode =  AVCaptureDevice.FlashMode.off
             @unknown default:
-                flashMode = .auto
+                mode =  AVCaptureDevice.FlashMode.on
             }
-            
-            UserdefaultManager.shared.flashMode = flashMode
-            
+            flashMode = mode.rawValue
+            manager.objectWillChange.send()
         } label: {
-            Image(systemName: flashMode.imageName).padding()
+            Text((AVCaptureDevice.FlashMode(rawValue: flashMode) ?? .off).description).font(.callout)
         }
     }
     // CameraMode
@@ -350,7 +399,7 @@ extension CameraView {
     // Settings
     private var settingButton: some View {
         return NavigationLink(destination: SettingsView()) {
-            Image(systemName: "ellipsis").padding()
+            Image(systemName: "info").padding()
         }
     }
     
@@ -360,7 +409,7 @@ extension CameraView {
         return Group {
             if let photo = manager.photos.last, let image = photo.thumbnil {
                 Button {
-                    selectedPhoto = photo
+                    sheetType = .imageViewer
                 } label: {
                     
                     Image(uiImage:image)

@@ -53,8 +53,21 @@ extension AVCaptureDevice.FlashMode {
             return "bolt.slash"
         case .auto:
             return "bolt.badge.a"
-        default:
-            return "circle"
+        @unknown default:
+            return "circle.fill"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .auto:
+            return "Auto"
+        case .off:
+            return "Off"
+        case .on:
+            return "On"
+        @unknown default:
+            return "Ukn"
         }
     }
 }

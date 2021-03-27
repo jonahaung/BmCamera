@@ -216,7 +216,12 @@
 		472A804F25F7625300E24110 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
-				47BC4309260B986E00CCA975 /* CustomCamera */,
+				472A801525F75D4500E24110 /* CameraView.swift */,
+				47F88B9B25F8C08900974BD9 /* CameraManager.swift */,
+				476E195025F8604D00C83053 /* PhotoCaptureProcessor.swift */,
+				472E949D260103D7007664F9 /* Extensions */,
+				472E949826010249007664F9 /* Models */,
+				472A804C25F761A300E24110 /* UIViews */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -384,19 +389,6 @@
 				4785053F260351B3002DD549 /* GridItemBoundsPreferencesKey.swift */,
 			);
 			path = Style;
-			sourceTree = "<group>";
-		};
-		47BC4309260B986E00CCA975 /* CustomCamera */ = {
-			isa = PBXGroup;
-			children = (
-				472A801525F75D4500E24110 /* CameraView.swift */,
-				47F88B9B25F8C08900974BD9 /* CameraManager.swift */,
-				476E195025F8604D00C83053 /* PhotoCaptureProcessor.swift */,
-				472E949D260103D7007664F9 /* Extensions */,
-				472E949826010249007664F9 /* Models */,
-				472A804C25F761A300E24110 /* UIViews */,
-			);
-			path = CustomCamera;
 			sourceTree = "<group>";
 		};
 		47F88B9F25F91D5D00974BD9 /* Database */ = {

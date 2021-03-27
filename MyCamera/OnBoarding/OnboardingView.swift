@@ -8,10 +8,17 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    init() {
+    
+    init(isFirstTime: Bool) {
         UIPageControl.appearance().currentPageIndicatorTintColor = UIColor.systemGray
         UIPageControl.appearance().pageIndicatorTintColor = UIColor.black.withAlphaComponent(0.2)
+        self.isFirstTime = isFirstTime
     }
+    
+    let isFirstTime: Bool
+    
+    @Environment(\.presentationMode) var presentationMode
+    
     var body: some View {
         VStack {
             TabView {
@@ -36,29 +43,24 @@ struct OnboardingView: View {
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
             
-            
-            NavigationLink(
-                destination: EULAView(isFirstTime: true).navigationBarBackButtonHidden(true).navigationBarHidden(true),
-                label: {
-                    Text("Start")
-                        .font(.headline)
-                        .frame(width: 200, height: 40, alignment: .center)
-                        .foregroundColor(.white)
-                        .background(Color.accentColor)
-                        .cornerRadius(10)
-                })
+            if isFirstTime {
+                let eulaView = EULAView(showAgreementButton: isFirstTime).navigationBarBackButtonHidden(isFirstTime).navigationBarHidden(true)
+                
+                NavigationLink(destination: eulaView, label: {
+                        Text("Start")
+                            .font(.headline)
+                            .frame(width: 200, height: 40, alignment: .center)
+                            .foregroundColor(.white)
+                            .background(Color.accentColor)
+                            .cornerRadius(10)
+                    })
+            } else {
+                Button("Close") {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
             Spacer()
         }
-        
-        .navigationBarItems(trailing:
-                                NavigationLink(
-                                    destination: EULAView(isFirstTime: true)
-                                        .navigationBarBackButtonHidden(true).navigationBarHidden(true),
-                                    label: {
-                                        Image(systemName: "arrow.right")
-                                            .font(Font.system(.title3))
-                                    })
-        )
         .navigationBarBackButtonHidden(true)
     }
 }

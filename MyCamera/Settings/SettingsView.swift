@@ -10,7 +10,7 @@ import AVFoundation
 
 private enum PresentViewType: Identifiable {
     var id: PresentViewType { return self }
-    case eulaView, lockScreenCreateNewAlbum, lockScreenUpdateCurrentAlbum, lockScreenViewExistingAlbum
+    case eulaView, lockScreenCreateNewAlbum, lockScreenUpdateCurrentAlbum, lockScreenViewExistingAlbum, onboardingView
 }
 
 
@@ -21,55 +21,52 @@ struct SettingsView: View {
     @State private var presentViewType: PresentViewType?
     @AppStorage(UserdefaultManager.shared._offShutterSound) private var offShutterSound: Bool = UserdefaultManager.shared.offShutterSound
     @AppStorage(UserdefaultManager.shared._flashMode) private var flashMode: Int = UserdefaultManager.shared.flashMode.rawValue
+    @AppStorage(UserdefaultManager.shared._fontDesign) private var fontDesignIndex: Int = UserdefaultManager.shared.fontDesign.rawValue
+    @AppStorage(UserdefaultManager.shared._photoQualityPrioritizationMode) private var photoQualityPrioritizationModeIndex: Int = UserdefaultManager.shared.photoQualityPrioritizationMode.rawValue
     
     var body: some View {
         
         Form {
+            
             Section(header: Text("Albums and Passcodes").foregroundColor(Color(.tertiaryLabel))) {
-                Button(action: {
-                    presentViewType = .lockScreenCreateNewAlbum
-                }) {
-                    SettingCell(text: "Create New Album", subtitle: nil, imageName: "key", color: Color(.brown))
-                }
-                Button(action: {
-                    presentViewType = .lockScreenUpdateCurrentAlbum
-                }) {
-                    SettingCell(text: "Update Current Album", subtitle: nil, imageName: "lock", color: .green)
-                }
-                Button(action: {
-                    presentViewType = .lockScreenViewExistingAlbum
-                }) {
-                    SettingCell(text: "View Existing Album", subtitle: nil, imageName: "lock.open", color: .purple)
-                }
-        
-                Button(action: {
-                    PersistenceController.shared.deleteAll()
-                }) {
-                    SettingCell(text: "Clear All Albums", subtitle: nil, imageName: "lock.slash", color: .red)
-                }
+                Button("Create New Album") { presentViewType = .lockScreenCreateNewAlbum }
+                Button("Update Current Album") { presentViewType = .lockScreenUpdateCurrentAlbum }
+                Button("View Existing Album") { presentViewType = .lockScreenViewExistingAlbum }
+                Button("Clear All Albums") { PersistenceController.shared.deleteAll() }
             }
             
             Section(header: Text("Camera Controls").foregroundColor(Color(.tertiaryLabel))) {
-                Toggle(isOn: $offShutterSound) {
-                    Text("Mute Photo Capture Sound")
+                
+                Picker(selection: $offShutterSound, label: Text("Shutter Sound")) {
+                    Text("On").tag(false)
+                    Text("Off").tag(true)
                 }
                 
-                HStack {
-                    Text("Flash Mode")
-                    Spacer()
-                    Picker(selection: $flashMode, label: EmptyView()) {
-                        Text("Off").tag(AVCaptureDevice.FlashMode.off.rawValue)
-                        Text("On").tag(AVCaptureDevice.FlashMode.on.rawValue)
-                        Text("Auto").tag(AVCaptureDevice.FlashMode.auto.rawValue)
-                    }.pickerStyle(SegmentedPickerStyle())
+                Picker(selection: $flashMode, label: Text("Flash Mode")) {
+                    Text(AVCaptureDevice.FlashMode.off.description).tag(AVCaptureDevice.FlashMode.off.rawValue)
+                    Text(AVCaptureDevice.FlashMode.on.description).tag(AVCaptureDevice.FlashMode.on.rawValue)
+                    Text(AVCaptureDevice.FlashMode.auto.description).tag(AVCaptureDevice.FlashMode.auto.rawValue)
+                }
+                
+                Picker(selection: $photoQualityPrioritizationModeIndex, label: Text("Photo Quality")) {
+                    Text(AVCapturePhotoOutput.QualityPrioritization.speed.description).tag(AVCapturePhotoOutput.QualityPrioritization.speed.rawValue)
+                    Text(AVCapturePhotoOutput.QualityPrioritization.balanced.description).tag(AVCapturePhotoOutput.QualityPrioritization.balanced.rawValue)
+                    Text(AVCapturePhotoOutput.QualityPrioritization.quality.description).tag(AVCapturePhotoOutput.QualityPrioritization.quality.rawValue)
                 }
             }
         
             Section(header: Text("Device Settings").foregroundColor(Color(.tertiaryLabel))) {
+                
+                Picker(selection: $fontDesignIndex, label: Text("Font Design")) {
+                    Text(FontDesign.rounded.name).tag(FontDesign.rounded.rawValue)
+                    Text(FontDesign.monoSpaced.name).tag(FontDesign.monoSpaced.rawValue)
+                    Text(FontDesign.serif.name).tag(FontDesign.serif.rawValue)
+                }
+                
                 Button(action: {
                     UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:], completionHandler: nil)
                 }) {
-                    SettingCell(text: "Open Device Settings", subtitle: nil, imageName: "gearshape.fill", color: .pink)
+                    Text("Open Device Settings")
                 }
             }
             
@@ -78,7 +75,7 @@ struct SettingsView: View {
                 SettingCell(text: "App Version", subtitle: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String, imageName: "app.badge.fill", color: .purple)
                     .foregroundColor(.secondary)
                 Button(action: {
-                    UserdefaultManager.shared.hasShownOnboarding = false
+                    presentViewType = .onboardingView
                 }) {
                     SettingCell(text: "About the App", subtitle: nil, imageName: "house.fill", color: .green)
                 }
@@ -117,17 +114,20 @@ struct SettingsView: View {
                 }
             }
         }
+        .buttonStyle(BorderlessButtonStyle())
         .navigationTitle("Settings")
         .sheet(item: $presentViewType) { type in
             switch type {
             case .eulaView:
-                EULAView(isFirstTime: false)
+                EULAView(showAgreementButton: false)
             case .lockScreenCreateNewAlbum:
                 LockScreenView(lockScreenType: .newAlbum, completion: nil)
             case .lockScreenUpdateCurrentAlbum:
                 LockScreenView(lockScreenType: .updateCurrentAlbum, completion: nil)
             case .lockScreenViewExistingAlbum:
                 ImageGalleryView()
+            case .onboardingView:
+                OnboardingView(isFirstTime: false)
             }
         }
     }

@@ -12,7 +12,7 @@ struct MyCameraApp: App {
     
     @AppStorage(UserdefaultManager.shared._hasShownOnboarding) private var hasShownOnboarding: Bool = UserdefaultManager.shared.hasShownOnboarding
     @AppStorage(UserdefaultManager.shared._doneSetup) private var doneSetup: Bool = UserdefaultManager.shared.doneSetup
-    
+    @AppStorage(UserdefaultManager.shared._fontDesign) private var fontDesign: Int = UserdefaultManager.shared.fontDesign.rawValue
     var body: some Scene {
         WindowGroup {
             NavigationView {
@@ -27,11 +27,11 @@ struct MyCameraApp: App {
                         }
                     }
                 }else {
-                    OnboardingView()
+                    OnboardingView(isFirstTime: true)
                 }
             }
             
-            .font(.system(size: 19, weight: .regular, design: .rounded))
+            .font(.system(size: UIFontMetrics.default.scaledValue(for: 19), weight: .regular, design: FontDesign(rawValue: fontDesign)?.design ?? .default))
             .navigationViewStyle(StackNavigationViewStyle())
         }
     }

@@ -10,7 +10,8 @@ import AVFoundation
 import Photos
 import Vision
 
-public struct AlertError {
+public struct AlertError: Identifiable {
+    public var id = UUID()
     public var title: String = ""
     public var message: String = ""
     public var primaryButtonTitle = "Accept"
@@ -30,9 +31,8 @@ public struct AlertError {
 
 class CameraManager: NSObject, ObservableObject {
     
-    var alertError: AlertError = AlertError()
+    @Published var alertError: AlertError?
     
-    @Published var showAlertError = false
     @Published var captureButtonEnabled = true
     @Published var captureModeControlEnabled = true
     @Published var isRecordingVideo = false
@@ -45,8 +45,6 @@ class CameraManager: NSObject, ObservableObject {
             toggleCaptureMode(captureMode: newValue)
         }
     }
-    
-    @Published var photoQualityPrioritizationModeIndex = AVCapturePhotoOutput.QualityPrioritization.balanced
     
     @Published var movieTime: Int = 0
     
@@ -132,6 +130,7 @@ extension CameraManager {
             
             if self.videoDeviceInput.device.isFlashAvailable {
                 photoSettings.flashMode = UserdefaultManager.shared.flashMode
+
             }
             
             photoSettings.isHighResolutionPhotoEnabled = true
@@ -140,7 +139,7 @@ extension CameraManager {
             }
             
             
-            photoSettings.photoQualityPrioritization = self.photoQualityPrioritizationModeIndex
+            photoSettings.photoQualityPrioritization = UserdefaultManager.shared.photoQualityPrioritizationMode
             
             let photoCaptureProcessor = PhotoCaptureProcessor(with: photoSettings,
                                                               willCapturePhotoAnimation: {
@@ -157,15 +156,18 @@ extension CameraManager {
                 }
             }, completionHandler: { photoCaptureProcessor in
                 // When the capture is complete, remove a reference to the photo capture delegate so it can be deallocated.
-                
-                self.sessionQueue.async {
-                    self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = nil
-                }
-            }, onCreatedPhoto: { photo in
                 Async.main {
                     self.captureButtonEnabled = true
                     self.captureModeControlEnabled = true
                     self.previewView.videoPreviewLayer.videoGravity = .resizeAspect
+                }
+                self.sessionQueue.async {
+                    self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = nil
+                }
+                
+            }, onCreatedPhoto: { photo in
+                Async.main {
+                    
                     self.photos.append(photo)
                 }
                 
@@ -330,13 +332,11 @@ extension CameraManager {
                 
                 DispatchQueue.main.async {
                     self.captureModeControlEnabled = true
-                    self.photoQualityPrioritizationModeIndex = .balanced
+
                     self.previewView.videoPreviewLayer.videoGravity = .resizeAspect
                 }
             }
         } else if captureMode == CaptureMode.movie {
-            
-            //            photoQualityPrioritizationSegControl.isHidden = true
             sessionQueue.async {
                 let movieFileOutput = AVCaptureMovieFileOutput()
                 
@@ -358,7 +358,6 @@ extension CameraManager {
                     DispatchQueue.main.async {
                         SoundManager.vibrate(vibration: .soft)
                         self.captureModeControlEnabled = true
-                        self.photoQualityPrioritizationModeIndex = .speed
                         self.previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
                     }
                     
@@ -628,7 +627,6 @@ extension CameraManager {
                 DispatchQueue.main.async {
                     let message = NSLocalizedString("Unable to resume", comment: "Alert message when unable to resume the session running")
                     self.alertError = AlertError(title: "MyCamera", message: message, primaryButtonTitle: "OK", secondaryButtonTitle: nil, primaryAction: nil, secondaryAction: nil)
-                    self.showAlertError = true
                 }
             } else {
                 DispatchQueue.main.async {
@@ -830,11 +828,6 @@ extension CameraManager {
             photoOutput.enabledSemanticSegmentationMatteTypes = photoOutput.availableSemanticSegmentationMatteTypes
             
             photoOutput.maxPhotoQualityPrioritization = .quality
-            
-
-            Async.main{
-                self.photoQualityPrioritizationModeIndex = AVCapturePhotoOutput.QualityPrioritization.balanced
-            }
         } else {
             print("Could not add photo output to the session")
             setupResult = .configurationFailed
@@ -872,7 +865,7 @@ extension CameraManager {
                     self.alertError = AlertError(title: alertMsg, message: message, primaryButtonTitle: "Ok", secondaryButtonTitle: "Cancel", primaryAction: {
                         
                     }, secondaryAction: nil)
-                    self.showAlertError = true
+                   
                     
                 }
             }

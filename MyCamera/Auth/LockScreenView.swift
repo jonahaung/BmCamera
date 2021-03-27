@@ -112,16 +112,10 @@ extension LockScreenView {
                 reset()
                 completion?(pw)
                 switch lockScreenType {
-                case .viewPhotoGallery:
-                    presentationMode.wrappedValue.dismiss()
-                case .updateCurrentAlbum:
-            
-                    presentationMode.wrappedValue.dismiss()
-                case .newAlbum:
-            
-                    presentationMode.wrappedValue.dismiss()
                 case .appSetUp:
                     UserdefaultManager.shared.doneSetup = true
+                default:
+                    presentationMode.wrappedValue.dismiss()
                 }
             }
         } else {
@@ -213,15 +207,13 @@ extension LockScreenView {
                         SoundManager.vibrate(vibration: .rigid)
                     }
                 } label: {
-                    Image(systemName: "chevron.backward.2").font(.system(size: 35, weight: .light, design: .rounded))
+                    Image(systemName: "chevron.backward.2").font(.system(size: 30, weight: .light, design: .rounded))
                 }
                 .disabled(password == nil)
             }.font(.callout).padding()
-            Button(isNewUser ? "Already have the passcodes?" : "Add New Album") {
-                withAnimation{
-                    isNewUser.toggle()
-                }
-            }
+            Button(action: {withAnimation{ isNewUser.toggle() }}, label: {
+                Text(isNewUser ? "Login" : "Add New Album").underline()
+            }).accentColor(isNewUser ? .blue : Color(.systemGreen))
         }.padding()
     }
     

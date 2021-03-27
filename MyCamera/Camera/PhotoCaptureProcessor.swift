@@ -93,6 +93,7 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
             didFinish()
             return
         }
+        didFinish()
         if let photo = Photo.create(data: photoData, isVideo: false) {
             onCreatedPhoto(photo)
         }
