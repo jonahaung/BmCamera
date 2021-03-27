@@ -1,5 +1,6 @@
 # BmCamera
 Hide your photos and videos in a smart way
+
 An iOS App written in SwiftUI
 
 A simplistic camera app with hidden built-in albums. This app will hold your important photos and videos private simply and smartly even if someone has access to your device's contents. 
